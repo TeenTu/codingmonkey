@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
-const exchangeRoutes = require('./routes/exchange');
+const exchangeRoutes = require('./routes/portfolio');
 
 // Initialize express app
 const app = express();
@@ -13,7 +13,7 @@ app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
 // Routes
-app.use('/api/exchange', exchangeRoutes);
+app.use('/api', exchangeRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

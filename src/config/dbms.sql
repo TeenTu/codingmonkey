@@ -2,10 +2,17 @@
 CREATE DATABASE IF NOT EXISTS investment_db;
 USE investment_db;
 
+-- 用户表
+CREATE TABLE users (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL
+);
+
 -- 产品表
 CREATE TABLE product (
     id INT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 产品当天价格表
@@ -29,16 +36,21 @@ CREATE TABLE product_quantity (
     FOREIGN KEY (id) REFERENCES product(id)
 );
 
--- 持仓表：增加 holding_id 作为自增主键，product_id 可重复
+-- 持仓表：使用自增主键 holding_id
 CREATE TABLE holdings (
-    holding_id   INT           NOT NULL AUTO_INCREMENT,
+    id   INT           NOT NULL AUTO_INCREMENT,
+    user_id      INT           NOT NULL,
     product_id   INT           NOT NULL,
     buy_price    DECIMAL(18,2) NOT NULL,
     buy_amount   INT           NOT NULL,
-    PRIMARY KEY (holding_id),
+    PRIMARY KEY (id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (product_id) REFERENCES product(id)
 );
 
+-- 插入默认用户
+INSERT INTO users (id, name) VALUES
+(1, 'Default User');
 
 -- 向产品表插入股票信息
 INSERT INTO product (id, name) VALUES
@@ -120,21 +132,21 @@ INSERT INTO product_type (id, type) VALUES
 INSERT INTO product_quantity (id, amount) VALUES
 (11, 100000);
 
--- 向持仓表插入测试数据
-INSERT INTO holdings (product_id, buy_price, buy_amount) VALUES
+-- 向持仓表插入测试数据（所有数据归属于默认用户 id=1）
+INSERT INTO holdings (user_id, product_id, buy_price, buy_amount) VALUES
 -- 股票持仓
-(1, 165.50, 100),  -- Apple Inc. 持仓100股，买入价165.50
-(2, 320.25, 50),   -- Microsoft Corporation 持仓50股，买入价320.25
-(3, 125.80, 80),   -- Amazon.com Inc. 持仓80股，买入价125.80
-(4, 235.60, 30),   -- Tesla Inc. 持仓30股，买入价235.60
-(5, 115.30, 75),   -- Alphabet Inc. 持仓75股，买入价115.30
+(1, 1, 165.50, 100),  -- Apple Inc. 持仓100股，买入价165.50
+(1, 2, 320.25, 50),   -- Microsoft Corporation 持仓50股，买入价320.25
+(1, 3, 125.80, 80),   -- Amazon.com Inc. 持仓80股，买入价125.80
+(1, 4, 235.60, 30),   -- Tesla Inc. 持仓30股，买入价235.60
+(1, 5, 115.30, 75),   -- Alphabet Inc. 持仓75股，买入价115.30
 
 -- 基金持仓
-(6, 395.20, 25),   -- Vanguard S&P 500 ETF 持仓25份，买入价395.20
-(7, 225.40, 40),   -- Fidelity 500 Index Fund 持仓40份，买入价225.40
-(8, 168.75, 60),   -- BlackRock Total Market Fund 持仓60份，买入价168.75
-(9, 92.80, 100),   -- JP Morgan Global Bond Fund 持仓100份，买入价92.80
-(10, 148.90, 20),  -- Goldman Sachs Growth Fund 持仓20份，买入价148.90
+(1, 6, 395.20, 25),   -- Vanguard S&P 500 ETF 持仓25份，买入价395.20
+(1, 7, 225.40, 40),   -- Fidelity 500 Index Fund 持仓40份，买入价225.40
+(1, 8, 168.75, 60),   -- BlackRock Total Market Fund 持仓60份，买入价168.75
+(1, 9, 92.80, 100),   -- JP Morgan Global Bond Fund 持仓100份，买入价92.80
+(1, 10, 148.90, 20),  -- Goldman Sachs Growth Fund 持仓20份，买入价148.90
 
 -- 现金持仓
-(11, 1.00, 50000); -- RMB现金 50,000元
+(1, 11, 1.00, 50000); -- RMB现金 50,000元

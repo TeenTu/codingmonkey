@@ -7,7 +7,10 @@ const performanceController = {
     // Get portfolio performance
     getPerformance: async (req, res) => {
         try {
-            const performance = await holdingperformance.getPerformance();
+            // get userId from param, if not param use default user
+            const userId = req.query.user_id || 1;
+
+            const performance = await holdingperformance.getPerformance(userId);
             
             if (!performance || performance.length === 0) {
                 return res.status(404).json({ 
@@ -34,7 +37,9 @@ const performanceController = {
                 totalCost += cost;
 
                 return {
-                    holding_id: holding.holding_id,
+                    id: holding.id,
+                    user_id: holding.user_id,
+                    user_name: holding.user_name,
                     product_id: holding.product_id,
                     product_name: holding.name,
                     buy_price: holding.buy_price,
@@ -51,6 +56,7 @@ const performanceController = {
             const totalGainLossPercentage = totalCost > 0 ? (totalGainLoss / totalCost * 100) : 0;
 
             res.json({
+                user_id: userId,
                 totalValue: totalCurrentValue,
                 totalCost: totalCost,
                 totalGainLoss: totalGainLoss,
