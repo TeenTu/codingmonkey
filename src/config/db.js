@@ -5,7 +5,7 @@ const pool = mysql.createPool({
   host: 'localhost',
   user: 'root',      
   password: password,  
-  database: 'exchange_db',      
+  database: 'investment_db',      
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
