@@ -30,8 +30,8 @@ app.get('/', (req, res) => {
 });
 
 // Routes
-app.use('/api', portfolioRoutes);
 app.use('/api/sell', sellRoutes);
+app.use('/api', portfolioRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
