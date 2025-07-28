@@ -1,7 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
-const exchangeRoutes = require('./routes/portfolio');
+const portfolioRoutes = require('./routes/portfolio');
+const sellRoutes = require('./routes/sellRouter');
 
 // Initialize express app
 const app = express();
@@ -12,8 +13,25 @@ app.use(morgan('dev')); // HTTP request logger
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
+// 根路径处理
+app.get('/', (req, res) => {
+    res.json({
+        message: '投资管理系统API',
+        endpoints: {
+            '卖出API': 'POST /api/sell/product/:productId/sell/:userId',
+            '示例': 'POST /api/sell/product/1/sell/1'
+        },
+        usage: {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: { amount: 50 }
+        }
+    });
+});
+
 // Routes
-app.use('/api', exchangeRoutes);
+app.use('/api', portfolioRoutes);
+app.use('/api/sell', sellRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
