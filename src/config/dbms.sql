@@ -119,3 +119,22 @@ INSERT INTO product_type (id, type) VALUES
 -- 向产品数量表插入现金数量
 INSERT INTO product_quantity (id, amount) VALUES
 (11, 100000);
+
+-- 向持仓表插入测试数据
+INSERT INTO holdings (product_id, buy_price, buy_amount) VALUES
+-- 股票持仓
+(1, 165.50, 100),  -- Apple Inc. 持仓100股，买入价165.50
+(2, 320.25, 50),   -- Microsoft Corporation 持仓50股，买入价320.25
+(3, 125.80, 80),   -- Amazon.com Inc. 持仓80股，买入价125.80
+(4, 235.60, 30),   -- Tesla Inc. 持仓30股，买入价235.60
+(5, 115.30, 75),   -- Alphabet Inc. 持仓75股，买入价115.30
+
+-- 基金持仓
+(6, 395.20, 25),   -- Vanguard S&P 500 ETF 持仓25份，买入价395.20
+(7, 225.40, 40),   -- Fidelity 500 Index Fund 持仓40份，买入价225.40
+(8, 168.75, 60),   -- BlackRock Total Market Fund 持仓60份，买入价168.75
+(9, 92.80, 100),   -- JP Morgan Global Bond Fund 持仓100份，买入价92.80
+(10, 148.90, 20),  -- Goldman Sachs Growth Fund 持仓20份，买入价148.90
+
+-- 现金持仓
+(11, 1.00, 50000); -- RMB现金 50,000元
