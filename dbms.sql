@@ -106,7 +106,7 @@ INSERT INTO product_quantity (id, amount) VALUES
 
 -- 向产品表插入现金名称
 INSERT INTO product (id, name) VALUES
-(11, 'Cash');
+(11, 'RMB');
 
 -- 向产品价格表插入现金价格（单位：元）
 INSERT INTO product_price (id, price) VALUES
