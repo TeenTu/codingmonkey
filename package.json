@@ -2,9 +2,9 @@
   "name": "nodehsbc",
   "version": "1.0.0",
   "description": "project",
-  "main": "server.js",
+  "main": "src/app.js",
   "scripts": {
-    "start": "node server.js run",
+    "start": "node src/app.js run",
     "test": "jest"
   },
   "author": "Leo",
@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "jest": "^30.0.5",
+    "nodemon": "^3.0.1",
     "supertest": "^7.1.4"
   }
 }
