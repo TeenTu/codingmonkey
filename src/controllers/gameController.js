@@ -83,8 +83,7 @@ const gameController = {
 
             res.json({
                 success: true,
-                userId,
-                balance
+                ...balance
             });
         } catch (error) {
             console.error('Get user balance error:', error);
@@ -113,7 +112,7 @@ const gameController = {
             res.json({
                 success: true,
                 message: 'Balance updated successfully',
-                data: result
+                ...result
             });
         } catch (error) {
             console.error('Update user balance error:', error);
