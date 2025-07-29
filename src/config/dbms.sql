@@ -1,3 +1,5 @@
+
+
 -- Create new database and switch to it
 CREATE DATABASE IF NOT EXISTS investment_db;
 USE investment_db;
@@ -12,6 +14,7 @@ CREATE TABLE users (
 CREATE TABLE product (
     id INT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
+		code VARCHAR(255), 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -53,12 +56,12 @@ INSERT INTO users (id, name) VALUES
 (1, 'Default User');
 
 -- 向产品表插入股票信息
-INSERT INTO product (id, name) VALUES
-(1, 'Apple Inc.'),
-(2, 'Microsoft Corporation'),
-(3, 'Amazon.com Inc.'),
-(4, 'Tesla Inc.'),
-(5, 'Alphabet Inc.');
+INSERT INTO product (id, name, code) VALUES
+(1, 'Apple Inc.', 'AAPL.US'),
+(2, 'Microsoft Corporation', '123'),
+(3, 'Amazon.com Inc.', '123'),
+(4, 'Tesla Inc.', 'TSLA.US'),
+(5, 'Alphabet Inc.', '123');
 
 -- 向产品当天价格表插入价格信息
 INSERT INTO product_price (id, price) VALUES
