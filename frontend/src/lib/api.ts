@@ -202,5 +202,37 @@ export const api = {
       console.error('重置价格天数失败:', error);
       throw error;
     }
+  },
+
+  // 模拟投资初始化
+  async initializeGame(userId: string, initialBalance: number, gameRemainDays: number): Promise<{ success: boolean; message: string; data?: any }> {
+    try {
+      const response = await fetch(`${API_BASE}/gameinit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: Number(userId),
+          initialBalance,
+          gameRemainDays
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || '模拟投资初始化失败');
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('模拟投资初始化失败:', error);
+      throw error;
+    }
   }
 };
