@@ -3,6 +3,7 @@ const router = express.Router();
 const performanceController = require('../controllers/performanceController');
 const priceUpdateController = require('../controllers/priceUpdateController');
 const sellController = require('../controllers/sellController');
+const getController = require('../controllers/getController');
 
 // Performance route
 router.get('/performance', performanceController.getPerformance);
@@ -14,5 +15,8 @@ router.post('/reset-price-updates', priceUpdateController.resetDays);
 
 // Sell product route, FIFO卖出产品（按买入顺序）
 router.post('/sell/product/:productId/user/:userId', sellController.sellProductFIFO);
+
+// Browse/Get portfolio
+router.get('/portfolio/user/:userId', getController.getPortfolio);
 
 module.exports = router;
