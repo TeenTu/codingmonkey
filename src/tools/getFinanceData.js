@@ -3,7 +3,7 @@ const { subDays, format } = require('date-fns');
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 const pLimit = require('p-limit');
 
-// 你的 symbol 列表
+// 你的 code 列表
 const stocks = [
   "AAPL", "MSFT", "AMZN", "NVDA", "GOOGL", "META", "TSLA", "BRK-B",
   "JPM", "UNH", "V", "WMT", "JNJ", "PG", "HD", "MA", "DIS", "CRM",
@@ -18,19 +18,27 @@ const funds = [
 
 
 // 控制并发
-const limit = pLimit(2);
+const limit = pLimit(1); // 并发降为1，配合延时更安全
 
-async function fetchHist(sym) {
+
+async function fetchHistWithName(sym) {
   const to = new Date();
-  const from = subDays(to, 60); 
+  const from = subDays(to, 60);
   const opts = {
     period1: format(from, 'yyyy-MM-dd'),
     period2: format(to, 'yyyy-MM-dd'),
     interval: '1d'
   };
-  const data = await yf.historical(sym, opts);
+  // 增加延时，防止被风控
+  await new Promise(r => setTimeout(r, 1500));
+  const [data, quote] = await Promise.all([
+    yf.historical(sym, opts),
+    yf.quote(sym)
+  ]);
+  const shortName = quote && quote.shortName ? quote.shortName : '';
   return data.slice(-60).map(d => ({
-    code: sym,
+    symbol: sym,
+    shortname: shortName,
     date: d.date.toISOString().slice(0, 10),
     close: d.close
   }));
@@ -41,7 +49,7 @@ async function fetchHist(sym) {
   const stocksResults = [];
   const promises = stocks.map(sym =>
     limit(() =>
-      fetchHist(sym)
+      fetchHistWithName(sym)
         .then(arr => stocksResults.push(...arr))
         .catch(err => console.error(sym, err.message))
     )
@@ -52,7 +60,8 @@ async function fetchHist(sym) {
   const stockscsvWriter = createCsvWriter({
     path: 'stocksprices.csv',
     header: [
-      {id: 'code', title: 'Code'},
+      {id: 'symbol', title: 'Symbol'},
+      {id: 'shortname', title: 'ShortName'},
       {id: 'date', title: 'Date'},
       {id: 'close', title: 'Close'}
     ]
@@ -67,7 +76,7 @@ async function fetchHist(sym) {
     const fundsResults = [];
     const promises = funds.map(sym =>
       limit(() =>
-        fetchHist(sym)
+        fetchHistWithName(sym)
           .then(arr => fundsResults.push(...arr))
           .catch(err => console.error(sym, err.message))
       )
@@ -78,7 +87,8 @@ async function fetchHist(sym) {
     const fundscsvWriter = createCsvWriter({
       path: 'fundsprices.csv',
       header: [
-        {id: 'code', title: 'Code'},
+        {id: 'symbol', title: 'Symbol'},
+        {id: 'shortname', title: 'ShortName'},
         {id: 'date', title: 'Date'},
         {id: 'close', title: 'Close'}
       ]
