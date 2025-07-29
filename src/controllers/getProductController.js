@@ -1,10 +1,10 @@
-const getAllProductModel = require('../models/getAllProductModel');
+const getProductModel = require('../models/getProductModel');
 
-const getAllProductController = {
+const getProductController = {
     // Get all products with current prices and daily changes
     getAllProducts: async (req, res) => {
         try {
-            const products = await getAllProductModel.getAllProducts();
+            const products = await getProductModel.getAllProducts();
             
             if (!products) {
                 return res.status(404).json({
@@ -69,7 +69,7 @@ const getAllProductController = {
                 });
             }
             
-            const products = await getAllProductModel.getAllProducts();
+            const products = await getProductModel.getAllProducts();
             const filteredProducts = products[type];
             
             res.json({
@@ -90,10 +90,43 @@ const getAllProductController = {
         }
     },
 
+    // Debug function for daily change calculation
+    debugDailyChange: async (req, res) => {
+        try {
+            const { code, type } = req.query;
+            
+            if (!code || !type) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Product code and type are required'
+                });
+            }
+            
+            const result = await getProductModel.debugDailyChange(code, type);
+            
+            res.json({
+                success: true,
+                message: 'Debug calculation completed',
+                data: {
+                    product_code: code,
+                    product_type: type,
+                    calculation_result: result
+                }
+            });
+        } catch (error) {
+            console.error('Debug daily change error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to debug daily change',
+                error: error.message
+            });
+        }
+    },
+
     // Internal function for getting all products (for use by other modules)
     _getAllProducts: async () => {
         try {
-            const products = await getAllProductModel.getAllProducts();
+            const products = await getProductModel.getAllProducts();
             
             if (!products) {
                 throw new Error('No products found');
@@ -109,7 +142,7 @@ const getAllProductController = {
     }
 };
 
-module.exports = getAllProductController;
+module.exports = getProductController;
 
 // 导出内部函数供其他模块使用Example usage:
 // const getAllProductController = require('./getAllProductController');

@@ -5,10 +5,15 @@ const priceCache = require('../tools/priceCache');
 
 // 保存当前更新到第几天
 let currentDay = 0;
+//TODO init with gameinit
 const MAX_DAYS = 30;
 
 
 const Price = {
+
+    // 添加currentDay相关方法
+    getCurrentDay: () => currentDay,
+
     updateAllPrices: async () => {
         try {
             if (currentDay >= MAX_DAYS) {
@@ -124,3 +129,4 @@ const Price = {
 };
 
 module.exports = Price;
+
