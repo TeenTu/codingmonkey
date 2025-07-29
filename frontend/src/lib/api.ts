@@ -162,6 +162,8 @@ export const api = {
       });
       
       if (!response.ok) {
+        console.log(`productId: ${productId},userId: ${userId}, buyAmount: ${amount}`);
+       
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       

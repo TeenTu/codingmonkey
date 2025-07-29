@@ -81,7 +81,7 @@ export default function Home() {
     setIsLoading(true);
     
     try {
-      const result = await api.sellProduct(sellProductId, userId, parseFloat(sellAmount));
+      const result = await api.sellProduct(sellProductId, userId, Number(sellAmount));
       setSellResult(result);
       setMessage({ type: 'success', text: '卖出操作成功' });
       
@@ -105,10 +105,10 @@ export default function Home() {
     setIsLoading(true);
     
     try {
-      const result = await api.buyProduct(buyProductId, userId, parseFloat(buyAmount));
+      const result = await api.buyProduct(buyProductId, userId, Number(buyAmount));
       setBuyResult(result);
       setMessage({ type: 'success', text: '买入操作成功' });
-      
+     
       // 刷新数据
       setTimeout(() => {
         loadUserData();
@@ -490,8 +490,9 @@ export default function Home() {
                       <Input
                         id="productId"
                         type="number"
-                        value={buyProductId}
-                        onChange={(e) => setBuyProductId(e.target.value)}
+                        value={actionType === 'sell' ?sellProductId: buyProductId}
+                        onChange={(e) => actionType === 'sell' ? setSellProductId(e.target.value) : setBuyProductId(e.target.value)}
+                        
                         placeholder="输入产品ID"
                         required
                       />
@@ -501,8 +502,9 @@ export default function Home() {
                       <Input
                         id="amount"
                         type="number"
-                        value={sellAmount}
-                        onChange={(e) => setSellAmount(e.target.value)}
+                        value={actionType === 'sell' ? sellAmount : buyAmount}
+
+                        onChange={(e) => actionType === 'sell' ? setSellAmount(e.target.value) : setBuyAmount(e.target.value)}
                         placeholder={`输入${actionType === 'sell' ? '卖出' : '买入'}数量`}
                         required
                       />
@@ -573,11 +575,11 @@ export default function Home() {
                             </div>
                             <div className="flex justify-between">
                               <span>买入价格:</span>
-                              <span className="font-medium">¥{buyResult.data?.buyPrice.toFixed(2)}</span>
+                              <span className="font-medium">¥{buyResult.data?.buyPrice ? Number(buyResult.data.buyPrice).toFixed(2) : '0.00'}</span>
                             </div>
                             <div className="flex justify-between">
                               <span>买入数量:</span>
-                              <span className="font-medium">{sellAmount}</span>
+                              <span className="font-medium">{buyAmount}</span>
                             </div>
                             <div className="flex justify-between">
                               <span>总花费:</span>
