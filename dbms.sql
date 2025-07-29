@@ -119,3 +119,13 @@ INSERT INTO product_type (id, type) VALUES
 -- 向产品数量表插入现金数量
 INSERT INTO product_quantity (id, amount) VALUES
 (11, 100000);
+
+-- 初始profolio表, 供参考,可不用
+INSERT INTO holdings (product_id, buy_price, buy_amount)
+VALUES 
+    (1, 173.62, 5),    -- 关联产品ID=1（Apple股票）
+    (2, 338.75, 3),    -- 关联产品ID=2（Microsoft股票）
+    (6, 412.35, 10),   -- 关联产品ID=6（Vanguard基金）
+    (9, 98.45, 50),    -- 关联产品ID=9（JP Morgan债券基金）
+    (11, 1.00, 10000); -- 关联产品ID=11（人民币现金）
+
