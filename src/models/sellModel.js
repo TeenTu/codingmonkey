@@ -4,9 +4,9 @@ const sellModel = {
     // 获取用户名
     getUsernameByUserId: async (userId) => {
         const [rows] = await db.query(`
-            SELECT username FROM user WHERE user_id = ?
+            SELECT name FROM users WHERE id = ?
         `, [userId]);
-        return rows[0]?.username || '未知用户';
+        return rows[0]?.name || '未知用户';
     },
 
     // FIFO卖出 - 按买入顺序卖出（指定用户）
@@ -89,7 +89,7 @@ const sellModel = {
             await connection.query(`
                 UPDATE product_quantity 
                 SET amount = amount + ? 
-                WHERE product_id = ?
+                WHERE id = ?
             `, [sellAmount, productId]);
 
             if (remainingSellAmount > 0) {
@@ -97,7 +97,7 @@ const sellModel = {
             }
 
             await connection.commit();
-            
+            console.log('卖出操作成功');
             return {
                 sold_holdings: soldHoldings,
                 summary: {
@@ -111,6 +111,7 @@ const sellModel = {
             };
 
         } catch (error) {
+            console.error('卖出操作失败:', error);
             await connection.rollback();
             throw error;
         } finally {

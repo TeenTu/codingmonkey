@@ -14,7 +14,6 @@ const performanceController = {
 
             const performance = await holdingperformance.getPerformance(userId);
 
-            console.log('User balance updated:', userBalance);
             if (!performance || performance.length === 0) {
                 return res.status(404).json({ 
                     message: 'No holdings found',

@@ -21,7 +21,7 @@ import {
   AlertCircle,
   Loader2
 } from "lucide-react";
-import { api, type PortfolioItem, type PerformanceData, type SellResult } from "@/lib/api";
+import { api, type PortfolioItem, type PerformanceData, type SellResult, type BuyResult } from "@/lib/api";
 
 export default function Home() {
   // 当前天数和日期
@@ -36,6 +36,12 @@ export default function Home() {
   const [performance, setPerformance] = useState<PerformanceData | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [actionType, setActionType] = useState<'buy' | 'sell'>('sell');
+  const [buyProductId, setBuyProductId] = useState("");
+  const [buyAmount, setBuyAmount] = useState("");
+  const [buyResult, setBuyResult] = useState<BuyResult | null>(null);
+
+
 
   // 加载投资组合数据
   const loadPortfolio = async () => {
@@ -78,7 +84,7 @@ export default function Home() {
     setIsLoading(true);
     
     try {
-      const result = await api.sellProduct(sellProductId, userId, parseFloat(sellAmount));
+      const result = await api.sellProduct(sellProductId, userId, Number(sellAmount));
       setSellResult(result);
       setMessage({ type: 'success', text: '卖出操作成功' });
       
@@ -94,6 +100,38 @@ export default function Home() {
       setMessage({ type: 'error', text: '卖出操作失败' });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleBuy = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      const result = await api.buyProduct(buyProductId, userId, Number(buyAmount));
+      setBuyResult(result);
+      setMessage({ type: 'success', text: '买入操作成功' });
+     
+      // 刷新数据
+      setTimeout(() => {
+        loadUserData();
+      }, 1000);
+    } catch (error) {
+      setBuyResult({
+        success: false,
+        message: '买入操作失败'
+      });
+      setMessage({ type: 'error', text: '买入操作失败' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAction = async (e: React.FormEvent) => {
+    if (actionType === 'sell') {
+      await handleSell(e);
+    } else {
+      await handleBuy(e);
     }
   };
 
@@ -245,9 +283,9 @@ export default function Home() {
               <TrendingUp className="h-4 w-4" />
               投资表现
             </TabsTrigger>
-            <TabsTrigger value="sell" className="flex items-center gap-2">
+            <TabsTrigger value="action" className="flex items-center gap-2">
               <ShoppingCart className="h-4 w-4" />
-              卖出产品
+              交易操作
             </TabsTrigger>
           </TabsList>
 
@@ -427,44 +465,62 @@ export default function Home() {
           </TabsContent>
 
           {/* 卖出产品标签 */}
-          <TabsContent value="sell">
+          <TabsContent value="action">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <ShoppingCart className="h-5 w-5" />
-                    卖出操作
+                    {actionType === 'sell' ? '卖出操作' : '买入操作'}
                   </CardTitle>
                   <CardDescription>
-                    使用FIFO策略卖出产品
+                    {actionType === 'sell' ? '使用FIFO策略卖出产品' : '买入产品'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleSell} className="space-y-4">
+                  <div className="flex mb-4">
+                    <Button
+                      variant={actionType === 'sell' ? 'default' : 'outline'}
+                      onClick={() => setActionType('sell')}
+                      className="rounded-r-none"
+                    >
+                      卖出
+                    </Button>
+                    <Button
+                      variant={actionType === 'buy' ? 'default' : 'outline'}
+                      onClick={() => setActionType('buy')}
+                      className="rounded-l-none"
+                    >
+                      买入
+                    </Button>
+                  </div>
+                  <form onSubmit={handleAction} className="space-y-4">
                     <div>
                       <Label htmlFor="productId">产品ID</Label>
                       <Input
                         id="productId"
                         type="number"
-                        value={sellProductId}
-                        onChange={(e) => setSellProductId(e.target.value)}
+                        value={actionType === 'sell' ?sellProductId: buyProductId}
+                        onChange={(e) => actionType === 'sell' ? setSellProductId(e.target.value) : setBuyProductId(e.target.value)}
+                        
                         placeholder="输入产品ID"
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="amount">卖出数量</Label>
+                      <Label htmlFor="amount">数量</Label>
                       <Input
                         id="amount"
                         type="number"
-                        value={sellAmount}
-                        onChange={(e) => setSellAmount(e.target.value)}
-                        placeholder="输入卖出数量"
+                        value={actionType === 'sell' ? sellAmount : buyAmount}
+
+                        onChange={(e) => actionType === 'sell' ? setSellAmount(e.target.value) : setBuyAmount(e.target.value)}
+                        placeholder={`输入${actionType === 'sell' ? '卖出' : '买入'}数量`}
                         required
                       />
                     </div>
                     <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "处理中..." : "确认卖出"}
+                      {isLoading ? "处理中..." : `确认${actionType === 'sell' ? '卖出' : '买入'}`}
                     </Button>
                   </form>
                 </CardContent>
@@ -472,10 +528,11 @@ export default function Home() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>卖出结果</CardTitle>
+                  <CardTitle>{actionType === 'sell' ? '卖出结果' : '买入结果'}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {sellResult ? (
+                  {actionType === 'sell' ? (
+                    sellResult ? (
                     <div className="space-y-4">
                       <Alert className={sellResult.success ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
                         <CheckCircle className="h-4 w-4" />
@@ -484,7 +541,7 @@ export default function Home() {
                         </AlertDescription>
                       </Alert>
                       
-                      {sellResult.success && (
+                      {sellResult.success && sellResult.data && (//检查操作是否成功，sellResult.data是否存在
                         <div className="space-y-2">
                           <div className="flex justify-between">
                             <span>卖出数量:</span>
@@ -492,23 +549,63 @@ export default function Home() {
                           </div>
                           <div className="flex justify-between">
                             <span>总盈亏:</span>
-                            <span className={`font-medium ${sellResult.data.profit_summary.total_profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {sellResult.data.profit_summary.total_profit >= 0 ? '+' : ''}¥{sellResult.data.profit_summary.total_profit.toFixed(2)}
+                            <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {Number(sellResult.data.profit_summary.total_profit) >= 0 ? '+' : ''}¥{Number(sellResult.data.profit_summary.total_profit).toFixed(2)}
                             </span>
                           </div>
                           <div className="flex justify-between">
                             <span>盈亏率:</span>
-                            <span className={`font-medium ${sellResult.data.profit_summary.total_profit_percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {sellResult.data.profit_summary.total_profit_percentage >= 0 ? '+' : ''}{sellResult.data.profit_summary.total_profit_percentage.toFixed(2)}%
+                            <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit_percentage) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {Number(sellResult.data.profit_summary.total_profit_percentage) >= 0 ? '+' : ''}{Number(sellResult.data.profit_summary.total_profit_percentage).toFixed(2)}%
                             </span>
                           </div>
                         </div>
                       )}
                     </div>
                   ) : (
-                    <p className="text-gray-500 text-center py-8">
-                      请先执行卖出操作查看结果
-                    </p>
+                    buyResult ? (
+                      <div className="space-y-4">
+                        <Alert className={buyResult.success ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
+                          <CheckCircle className="h-4 w-4" />
+                          <AlertDescription>
+                            {buyResult.message}
+                          </AlertDescription>
+                        </Alert>
+                        
+                        {buyResult.success && (
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <span>产品名称:</span>
+                              <span className="font-medium">{buyResult.data?.productName}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>买入价格:</span>
+                              <span className="font-medium">¥{buyResult.data?.buyPrice ? Number(buyResult.data.buyPrice).toFixed(2) : '0.00'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>买入数量:</span>
+                              <span className="font-medium">{buyAmount}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>总花费:</span>
+                              <span className="font-medium">¥{buyResult.data?.totalCost.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>当前总持仓:</span>
+                              <span className="font-medium">{buyResult.data?.currentHoldingAmount}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>剩余库存:</span>
+                              <span className="font-medium">{buyResult.data?.remainingQuantity}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-center py-8">
+                        请先执行买入操作查看结果
+                      </p>
+                    )
                   )}
                 </CardContent>
               </Card>
