@@ -57,6 +57,42 @@ const getProductController = {
         }
     },
 
+    // Get product detail by ID
+    getProductDetail: async (req, res) => {
+        try {
+            const { productId } = req.params;
+            
+            if (!productId || isNaN(productId)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid product ID'
+                });
+            }
+            
+            const productDetail = await getProductModel.getProductDetail(parseInt(productId));
+            
+            if (!productDetail) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Product not found'
+                });
+            }
+            
+            res.json({
+                success: true,
+                message: 'Product detail retrieved successfully',
+                data: productDetail
+            });
+        } catch (error) {
+            console.error('Get product detail error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to retrieve product detail',
+                error: error.message
+            });
+        }
+    },
+
     // Get products by type (stocks or funds)
     getProductsByType: async (req, res) => {
         try {

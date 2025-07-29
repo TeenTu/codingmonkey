@@ -17,6 +17,55 @@ const getProductModel = {
         return result;
     },
 
+    // Get product detail by product ID
+    getProductDetail: async (productId) => {
+        try {
+            const query = `
+                SELECT 
+                    p.id,
+                    p.name,
+                    p.code,
+                    pp.price as current_price,
+                    pt.type as product_type,
+                    pq.amount as available_quantity
+                FROM product p
+                JOIN product_price pp ON p.id = pp.id
+                JOIN product_type pt ON p.id = pt.id
+                LEFT JOIN product_quantity pq ON p.id = pq.id
+                WHERE p.id = ?
+            `;
+            
+            const [products] = await db.query(query, [productId]);
+            
+            if (products.length === 0) {
+                throw new Error(`Product with ID ${productId} not found`);
+            }
+            
+            const product = products[0];
+            
+            // Calculate daily change
+            const dailyChange = calculateDailyChange(product.code, product.product_type);
+            
+            // Get historical price data for chart
+            const historicalPrices = getHistoricalPrices(product.code, product.product_type);
+            
+            return {
+                id: product.id,
+                name: product.name,
+                code: product.code,
+                current_price: parseFloat(product.current_price),
+                product_type: product.product_type,
+                available_quantity: product.available_quantity || 0,
+                daily_change: dailyChange.change,
+                daily_change_percentage: dailyChange.changePercentage,
+                previous_price: dailyChange.previousPrice,
+                historical_prices: historicalPrices
+            };
+        } catch (error) {
+            throw new Error(`Error fetching product detail: ${error.message}`);
+        }
+    },
+
     // Get all products with current prices, types, and daily changes
     getAllProducts: async () => {
         try {
@@ -153,6 +202,39 @@ function calculateDailyChange(productCode, productType) {
             changePercentage: 0,
             previousPrice: null
         };
+    }
+}
+
+// Helper function to get historical prices for chart
+function getHistoricalPrices(productCode, productType) {
+    try {
+        // Determine which price cache to use
+        const cacheSource = productType === 'Stock' ? priceCache.stocks : priceCache.funds;
+        
+        // Find the product in cache by code
+        const productPriceData = cacheSource.find(item => 
+            item.symbol === productCode || item.shortname === productCode
+        );
+        
+        if (!productPriceData || !productPriceData.prices) {
+            console.log(`Product ${productCode} not found in cache or no price data`);
+            return [];
+        }
+        
+        // Get current day to limit the data
+        let currentDay = Price.getCurrentDay();
+        
+        // Return price data up to current day (including today)
+        const relevantPrices = productPriceData.prices.slice(0, currentDay);
+        
+        return relevantPrices.map((price, index) => ({
+            day: index + 1,
+            date: price.date,
+            price: parseFloat(price.close.toFixed(2))
+        }));
+    } catch (error) {
+        console.error(`Error getting historical prices for ${productCode}:`, error);
+        return [];
     }
 }
 

@@ -78,6 +78,25 @@ export interface BuyResult {
   };
 }
 
+export interface PriceHistoryItem {
+  day: number;
+  date: string;
+  price: number;
+}
+
+export interface ProductDetailData {
+  id: number;
+  name: string;
+  code: string;
+  current_price: number;
+  product_type: string;
+  available_quantity: number;
+  daily_change: number;
+  daily_change_percentage: number;
+  previous_price: number | null;
+  historical_prices: PriceHistoryItem[];
+}
+
 // API函数
 export const api = {
   // 获取投资组合
@@ -96,7 +115,19 @@ export const api = {
       }
       
       // 转换后端数据格式为前端格式
-      return data.data.map((item: any) => ({
+      return data.data.map((item: {
+        holding_id: number;
+        product_name: string;
+        buy_price: string;
+        current_price: string;
+        buy_amount: string;
+        total_buy_value: string;
+        total_current_value: string;
+        change: string;
+        change_percentage: string;
+        profit_loss: string;
+        profit_loss_percentage: string;
+      }) => ({
         id: item.holding_id,
         product_name: item.product_name,
         buy_price: parseFloat(item.buy_price),
@@ -125,7 +156,17 @@ export const api = {
       const data = await response.json();
       
       // 转换后端数据格式为前端格式
-      const holdings = data.holdings.map((item: any) => ({
+      const holdings = data.holdings.map((item: {
+        id: number;
+        product_name: string;
+        buy_price: string;
+        current_price: string;
+        quantity: string;
+        cost: string;
+        current_value: string;
+        gain_loss: string;
+        gain_loss_percentage: string;
+      }) => ({
         id: item.id,
         product_name: item.product_name,
         buy_price: parseFloat(item.buy_price),
@@ -279,7 +320,7 @@ export const api = {
   },
 
   // 模拟投资初始化
-  async initializeGame(userId: string, initialBalance: number, gameRemainDays: number): Promise<{ success: boolean; message: string; data?: any }> {
+  async initializeGame(userId: string, initialBalance: number, gameRemainDays: number): Promise<{ success: boolean; message: string; data?: { currentDay?: number; date?: string } }> {
     try {
       const response = await fetch(`${API_BASE}/gameinit`, {
         method: 'POST',
@@ -311,7 +352,7 @@ export const api = {
   },
 
   // 推进到下一天
-  async advanceDay(userId: string): Promise<{ success: boolean; message: string; data?: any }> {
+  async advanceDay(userId: string): Promise<{ success: boolean; message: string; data?: { currentDay?: number; date?: string } }> {
     try {
       const response = await fetch(`${API_BASE}/advanceday?user_id=${userId}`, {
         method: 'GET',
@@ -352,6 +393,28 @@ export const api = {
       return data.data;
     } catch (error) {
       console.error('获取产品列表失败:', error);
+      throw error;
+    }
+  },
+
+  // 获取产品详情
+  async getProductDetail(productId: string): Promise<ProductDetailData> {
+    try {
+      const response = await fetch(`${API_BASE}/product/detail/${productId}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || '获取产品详情失败');
+      }
+      
+      return data.data;
+    } catch (error) {
+      console.error('获取产品详情失败:', error);
       throw error;
     }
   },

@@ -28,6 +28,9 @@ router.get('/products', getProductController.getAllProducts);
 router.get('/products/:type', getProductController.getProductsByType);
 router.get('/products/debug/daily-change', getProductController.debugDailyChange);
 
+// Get product detail by ID
+router.get('/product/detail/:productId', getProductController.getProductDetail);
+
 // Game initialization route
 router.post('/gameinit', gameController.initializeGame);
 
