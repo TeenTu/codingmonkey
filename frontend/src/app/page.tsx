@@ -259,53 +259,48 @@ export default function Home() {
                     <thead>
                       <tr className="border-b">
                         <th className="text-left p-2">产品名称</th>
+                        <th className="text-left p-2">产品代码</th>
+                        <th className="text-left p-2">类型</th>
                         <th className="text-left p-2">买入价格</th>
-                        <th className="text-left p-2">当前价格</th>
                         <th className="text-left p-2">持有数量</th>
-                        <th className="text-left p-2">投资成本</th>
-                        <th className="text-left p-2">当前价值</th>
-                        <th className="text-left p-2">盈亏</th>
-                        <th className="text-left p-2">盈亏率</th>
+                        <th className="text-left p-2">当前价格</th>
+                        <th className="text-left p-2">可用库存</th>
                       </tr>
                     </thead>
-                                         <tbody>
-                       {loading ? (
-                         <tr>
-                           <td colSpan={8} className="p-4 text-center">
-                             <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                             <p className="mt-2 text-gray-500">加载中...</p>
-                           </td>
-                         </tr>
-                       ) : portfolio.length > 0 ? (
-                         portfolio.map((item: PortfolioItem) => (
-                           <tr key={item.id} className="border-b hover:bg-gray-50">
-                             <td className="p-2 font-medium">{item.product_name}</td>
-                             <td className="p-2">¥{item.buy_price.toFixed(2)}</td>
-                             <td className="p-2">¥{item.current_price.toFixed(2)}</td>
-                             <td className="p-2">{item.quantity}</td>
-                             <td className="p-2">¥{item.cost.toFixed(2)}</td>
-                             <td className="p-2">¥{item.current_value.toFixed(2)}</td>
-                             <td className={`p-2 ${item.gain_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                               {item.gain_loss >= 0 ? '+' : ''}¥{item.gain_loss.toFixed(2)}
-                             </td>
-                             <td className={`p-2 ${item.gain_loss_percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                               {item.gain_loss_percentage >= 0 ? '+' : ''}{item.gain_loss_percentage.toFixed(2)}%
-                             </td>
-                           </tr>
-                         ))
-                       ) : (
-                         <tr>
-                           <td colSpan={8} className="p-4 text-center text-gray-500">
-                             暂无投资组合数据
-                           </td>
-                         </tr>
-                       )}
-                     </tbody>
+                    <tbody>
+                      {loading ? (
+                        <tr>
+                          <td colSpan={7} className="p-4 text-center">
+                            <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                            <p className="mt-2 text-gray-500">加载中...</p>
+                          </td>
+                        </tr>
+                      ) : portfolio.length > 0 ? (
+                        portfolio.map((item: PortfolioItem) => (
+                          <tr key={item.holding_id} className="border-b hover:bg-gray-50">
+                            <td className="p-2 font-medium">{item.product_name}</td>
+                            <td className="p-2">{item.product_code || '-'}</td>
+                            <td className="p-2">{item.product_type}</td>
+                            <td className="p-2">¥{item.buy_price.toFixed(2)}</td>
+                            <td className="p-2">{item.buy_amount}</td>
+                            <td className="p-2">¥{item.current_price.toFixed(2)}</td>
+                            <td className="p-2">{item.available_amount}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={7} className="p-4 text-center text-gray-500">
+                            暂无投资组合数据
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
                   </table>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
+
 
           {/* 投资表现标签 */}
           <TabsContent value="performance">
