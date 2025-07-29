@@ -1,5 +1,6 @@
 const gameModel = require('../models/gameModel');
-
+const priceUpdateController = require('./priceUpdateController');
+// const result = await priceUpdateController._updatePrices();
 const gameController = {
     // Initialize game for a user
     initializeGame: async (req, res) => {
@@ -42,7 +43,7 @@ const gameController = {
                     message: 'User ID is required' 
                 });
             }
-            await this._updateUserBalance
+            const updatePricesResult = await priceUpdateController._updatePrices();
             const result = await gameModel.advanceDay(userId);
             
             res.json({

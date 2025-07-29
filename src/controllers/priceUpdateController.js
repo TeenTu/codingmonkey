@@ -46,7 +46,27 @@ const priceUpdateController = {
                 error: error.message
             });
         }
+    },
+
+    // Internal function for updating prices (for use by other modules)
+    _updatePrices: async () => {
+        try {
+            const result = await Price.updateAllPrices();
+            
+            if (!result.success) {
+                throw new Error(result.message || 'Failed to update prices');
+            }
+            
+            return result;
+        } catch (error) {
+            throw new Error(`Failed to update prices: ${error.message}`);
+        }
     }
 };
 
 module.exports = priceUpdateController;
+
+// 导出内部函数供其他模块使用Example usage:
+// const priceUpdateController = require('./priceUpdateController');
+// const result = await priceUpdateController._updatePrices();
+// 需要验证result字段success是否为true

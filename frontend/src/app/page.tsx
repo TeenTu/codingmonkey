@@ -26,13 +26,13 @@ import {
   RefreshCw, 
   DollarSign,
   TrendingDown,
-  Info,
   CheckCircle,
   AlertCircle,
   Loader2,
-  GamepadIcon
+  GamepadIcon,
+  Search
 } from "lucide-react";
-import { api, type PortfolioItem, type PerformanceData, type SellResult } from "@/lib/api";
+import { api, type PortfolioItem, type PerformanceData, type SellResult, type AllProductsData, type ProductItem } from "@/lib/api";
 
 export default function Home() {
   const [userId, setUserId] = useState("1");
@@ -51,13 +51,21 @@ export default function Home() {
   const [gameRemainDays, setGameRemainDays] = useState("30");
   const [gameInitLoading, setGameInitLoading] = useState(false);
 
+  // 推进天数相关状态
+  const [advanceDayLoading, setAdvanceDayLoading] = useState(false);
+
+  // 产品相关状态
+  const [allProducts, setAllProducts] = useState<AllProductsData | null>(null);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<ProductItem | null>(null);
+
   // 检查是否需要显示模拟投资初始化弹窗
   useEffect(() => {
     const hasInitialized = localStorage.getItem(`game_initialized_user_${userId}`);
     if (!hasInitialized) {
       setShowGameInitDialog(true);
     } else {
-      loadUserData();
+      loadAllData();
     }
   }, [userId]);
 
@@ -88,7 +96,7 @@ export default function Home() {
         
         // 加载用户数据
         setTimeout(() => {
-          loadUserData();
+          loadAllData();
         }, 500);
       }
     } catch (error) {
@@ -105,7 +113,7 @@ export default function Home() {
   const handleSkipGameInit = () => {
     localStorage.setItem(`game_initialized_user_${userId}`, 'true');
     setShowGameInitDialog(false);
-    loadUserData();
+    loadAllData();
   };
 
   // 加载投资组合数据
@@ -139,9 +147,27 @@ export default function Home() {
     await Promise.all([loadPortfolio(), loadPerformance()]);
   };
 
+  // 加载所有数据（用户数据 + 产品数据）
+  const loadAllData = async () => {
+    await Promise.all([loadUserData(), loadAllProducts()]);
+  };
+
+  // 加载所有产品数据
+  const loadAllProducts = async () => {
+    try {
+      setProductsLoading(true);
+      const data = await api.getAllProducts();
+      setAllProducts(data);
+    } catch (error) {
+      setMessage({ type: 'error', text: '加载产品列表失败' });
+    } finally {
+      setProductsLoading(false);
+    }
+  };
+
   // 初始加载
   useEffect(() => {
-    loadUserData();
+    loadAllData();
   }, []);
 
   const handleSell = async (e: React.FormEvent) => {
@@ -155,7 +181,7 @@ export default function Home() {
       
       // 刷新数据
       setTimeout(() => {
-        loadUserData();
+        loadAllData();
       }, 1000);
     } catch (error) {
       setSellResult({
@@ -168,42 +194,29 @@ export default function Home() {
     }
   };
 
-  const updatePrices = async () => {
+  // 推进到下一天
+  const handleAdvanceDay = async () => {
+    if (!confirm('确定要推进到下一天吗？这将更新所有价格。')) {
+      return;
+    }
+    
+    setAdvanceDayLoading(true);
+    
     try {
-      setLoading(true);
-      const result = await api.updatePrices();
+      const result = await api.advanceDay(userId);
       setMessage({ type: 'success', text: result.message });
       
       // 刷新数据
       setTimeout(() => {
-        loadUserData();
+        loadAllData();
       }, 1000);
     } catch (error) {
-      setMessage({ type: 'error', text: '价格更新失败' });
+      setMessage({ 
+        type: 'error', 
+        text: error instanceof Error ? error.message : '推进天数失败' 
+      });
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const getPriceStatus = async () => {
-    try {
-      const result = await api.getPriceStatus();
-      setMessage({ type: 'success', text: `价格状态: 已更新${result.daysUpdated}天，共${result.totalDays}天` });
-    } catch (error) {
-      setMessage({ type: 'error', text: '获取价格状态失败' });
-    }
-  };
-
-  const resetPriceDays = async () => {
-    if (!confirm('确定要重置价格更新天数吗？')) {
-      return;
-    }
-    
-    try {
-      const result = await api.resetPriceDays();
-      setMessage({ type: 'success', text: result.message });
-    } catch (error) {
-      setMessage({ type: 'error', text: '重置天数失败' });
+      setAdvanceDayLoading(false);
     }
   };
 
@@ -316,8 +329,8 @@ export default function Home() {
                 placeholder="用户ID"
                 className="w-20 h-8 text-sm"
               />
-              <Button size="sm" onClick={loadUserData} disabled={loading}>
-                {loading ? (
+              <Button size="sm" onClick={loadAllData} disabled={loading || productsLoading}>
+                {loading || productsLoading ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
                 ) : (
                   <RefreshCw className="h-3 w-3" />
@@ -327,36 +340,116 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 快速操作 */}
-        <div className="mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <RefreshCw className="h-5 w-5" />
-                快速操作
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-2">
-                <Button variant="outline" onClick={updatePrices}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  更新价格
-                </Button>
-                <Button variant="outline" onClick={getPriceStatus}>
-                  <Info className="h-4 w-4 mr-2" />
-                  价格状态
-                </Button>
-                <Button variant="outline" onClick={resetPriceDays}>
-                  <AlertCircle className="h-4 w-4 mr-2" />
-                  重置天数
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* 主要内容 - 添加网格布局 */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* 左侧边栏 - 产品列表 */}
+          <div className="lg:col-span-1">
+            <Card className="h-fit sticky top-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Search className="h-5 w-5" />
+                  产品市场
+                </CardTitle>
+                <CardDescription>
+                  浏览所有可投资的股票和基金
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                {productsLoading ? (
+                  <div className="p-6 text-center">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+                    <p className="text-sm text-gray-500">加载产品中...</p>
+                  </div>
+                ) : allProducts ? (
+                  <div className="max-h-96 overflow-y-auto">
+                    {/* 股票部分 */}
+                    {allProducts.stocks.length > 0 && (
+                      <div>
+                        <div className="px-4 py-2 bg-gray-50 border-b">
+                          <h3 className="font-medium text-sm text-gray-700">
+                            股票 ({allProducts.stocks.length})
+                          </h3>
+                        </div>
+                        {allProducts.stocks.map((stock) => (
+                          <div
+                            key={stock.id}
+                            onClick={() => setSelectedProduct(stock)}
+                            className={`p-3 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
+                              selectedProduct?.id === stock.id ? 'bg-blue-50 border-blue-200' : ''
+                            }`}
+                          >
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm text-gray-900 truncate">
+                                  {stock.name}
+                                </p>
+                                <p className="text-xs text-gray-500">{stock.code}</p>
+                              </div>
+                              <div className="text-right ml-2">
+                                <p className="font-medium text-sm">¥{stock.current_price.toFixed(2)}</p>
+                                <p className={`text-xs ${
+                                  stock.daily_change > 0 ? 'text-green-600' : 
+                                  stock.daily_change < 0 ? 'text-red-600' : 'text-gray-500'
+                                }`}>
+                                  {stock.daily_change > 0 ? '+' : ''}{stock.daily_change_percentage.toFixed(2)}%
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* 基金部分 */}
+                    {allProducts.funds.length > 0 && (
+                      <div>
+                        <div className="px-4 py-2 bg-gray-50 border-b">
+                          <h3 className="font-medium text-sm text-gray-700">
+                            基金 ({allProducts.funds.length})
+                          </h3>
+                        </div>
+                        {allProducts.funds.map((fund) => (
+                          <div
+                            key={fund.id}
+                            onClick={() => setSelectedProduct(fund)}
+                            className={`p-3 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
+                              selectedProduct?.id === fund.id ? 'bg-blue-50 border-blue-200' : ''
+                            }`}
+                          >
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm text-gray-900 truncate">
+                                  {fund.name}
+                                </p>
+                                <p className="text-xs text-gray-500">{fund.code}</p>
+                              </div>
+                              <div className="text-right ml-2">
+                                <p className="font-medium text-sm">¥{fund.current_price.toFixed(2)}</p>
+                                <p className={`text-xs ${
+                                  fund.daily_change > 0 ? 'text-green-600' : 
+                                  fund.daily_change < 0 ? 'text-red-600' : 'text-gray-500'
+                                }`}>
+                                  {fund.daily_change > 0 ? '+' : ''}{fund.daily_change_percentage.toFixed(2)}%
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-6 text-center text-gray-500">
+                    <p className="text-sm">暂无产品数据</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-        {/* 主要内容 */}
-        <Tabs defaultValue="portfolio" className="space-y-6">
+          {/* 右侧主要内容区域 */}
+          <div className="lg:col-span-3">
+            <Tabs defaultValue="portfolio" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="portfolio" className="flex items-center gap-2">
               <Briefcase className="h-4 w-4" />
@@ -636,6 +729,30 @@ export default function Home() {
             </div>
           </TabsContent>
         </Tabs>
+          </div>
+        </div>
+
+        {/* 下一天按钮 - 固定在右下角 */}
+        <div className="fixed bottom-6 right-6 z-50">
+          <Button 
+            size="lg" 
+            onClick={handleAdvanceDay} 
+            disabled={advanceDayLoading}
+            className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+          >
+            {advanceDayLoading ? (
+              <>
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                推进中...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-5 w-5 mr-2" />
+                下一天
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );

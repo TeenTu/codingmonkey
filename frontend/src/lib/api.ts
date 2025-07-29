@@ -34,6 +34,34 @@ export interface SellResult {
   };
 }
 
+export interface ProductItem {
+  id: number;
+  name: string;
+  code: string;
+  current_price: number;
+  product_type: string;
+  available_quantity: number;
+  daily_change: number;
+  daily_change_percentage: number;
+  previous_price: number | null;
+}
+
+export interface AllProductsData {
+  stocks: ProductItem[];
+  funds: ProductItem[];
+  summary: {
+    total_products: number;
+    total_stocks: number;
+    total_funds: number;
+    stocks_gainers: number;
+    stocks_losers: number;
+    stocks_unchanged: number;
+    funds_gainers: number;
+    funds_losers: number;
+    funds_unchanged: number;
+  };
+}
+
 // API函数
 export const api = {
   // 获取投资组合
@@ -232,6 +260,74 @@ export const api = {
       return data;
     } catch (error) {
       console.error('模拟投资初始化失败:', error);
+      throw error;
+    }
+  },
+
+  // 推进到下一天
+  async advanceDay(userId: string): Promise<{ success: boolean; message: string; data?: any }> {
+    try {
+      const response = await fetch(`${API_BASE}/advanceday?user_id=${userId}`, {
+        method: 'GET',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || '推进到下一天失败');
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('推进到下一天失败:', error);
+      throw error;
+    }
+  },
+
+  // 获取所有产品
+  async getAllProducts(): Promise<AllProductsData> {
+    try {
+      const response = await fetch(`${API_BASE}/products`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || '获取产品列表失败');
+      }
+      
+      return data.data;
+    } catch (error) {
+      console.error('获取产品列表失败:', error);
+      throw error;
+    }
+  },
+
+  // 按类型获取产品
+  async getProductsByType(type: 'stocks' | 'funds'): Promise<ProductItem[]> {
+    try {
+      const response = await fetch(`${API_BASE}/products/${type}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || `获取${type === 'stocks' ? '股票' : '基金'}列表失败`);
+      }
+      
+      return data.data[type];
+    } catch (error) {
+      console.error(`获取${type === 'stocks' ? '股票' : '基金'}列表失败:`, error);
       throw error;
     }
   }

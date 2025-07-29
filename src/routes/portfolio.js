@@ -5,6 +5,7 @@ const priceUpdateController = require('../controllers/priceUpdateController');
 const sellController = require('../controllers/sellController');
 const getPortfolioController = require('../controllers/getPortfolioController');
 const gameController = require('../controllers/gameController');
+const getAllProductController = require('../controllers/getAllProductController');
 
 // Performance route
 router.get('/performance/', performanceController.getPerformance);
@@ -19,6 +20,10 @@ router.post('/sell/product/:productId/user/:userId', sellController.sellProductF
 
 // Browse/Get portfolio
 router.get('/portfolio/user/:userId', getPortfolioController.getPortfolio);
+
+// Get all products route
+router.get('/products', getAllProductController.getAllProducts);
+router.get('/products/:type', getAllProductController.getProductsByType);
 
 // Game initialization route
 router.post('/gameinit', gameController.initializeGame);
