@@ -3,8 +3,8 @@ INSERT INTO users (id, name) VALUES
 (1, 'Default User');
 
 -- 插入默认用户的现金余额
-INSERT INTO user_cash_balance (user_id, balance) VALUES
-(1, 500000.00);
+INSERT INTO user_game_status (user_id, balance, remain_days) VALUES
+(1, 500000.00,30);
 
 -- 向产品表插入股票信息
 INSERT INTO product (id, name, code) VALUES

@@ -10,11 +10,14 @@ CREATE TABLE users (
     name VARCHAR(255) NOT NULL
 );
 
--- 用户现金余额表
-CREATE TABLE user_cash_balance (
+-- 用户游戏状态表
+CREATE TABLE user_game_status (
     user_id INT PRIMARY KEY,
     balance DECIMAL(18,2) NOT NULL DEFAULT 0.00,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    remain_days INT NOT NULL DEFAULT 30,
+    is_game_over BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,    
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
