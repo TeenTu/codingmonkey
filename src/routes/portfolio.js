@@ -3,7 +3,7 @@ const router = express.Router();
 const performanceController = require('../controllers/performanceController');
 const priceUpdateController = require('../controllers/priceUpdateController');
 const sellController = require('../controllers/sellController');
-const getController = require('../controllers/getController');
+const getController = require('../controllers/getPortfolioController');
 
 // Performance route
 router.get('/performance', performanceController.getPerformance);
@@ -17,6 +17,6 @@ router.post('/reset-price-updates', priceUpdateController.resetDays);
 router.post('/sell/product/:productId/user/:userId', sellController.sellProductFIFO);
 
 // Browse/Get portfolio
-router.get('/portfolio/user/:userId', getController.getPortfolio);
+router.get('/portfolio/user/:userId', getPortfolioController.getPortfolio);
 
 module.exports = router;

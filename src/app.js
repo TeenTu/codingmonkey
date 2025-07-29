@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 // const morgan = require('morgan');
 const portfolioRoutes = require('./routes/portfolio');
-const sellRoutes = require('./routes/sellRouter');
+// const sellRoutes = require('./routes/sellRouter');
 
 // Initialize express app
 const app = express();
