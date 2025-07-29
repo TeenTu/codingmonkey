@@ -9,7 +9,7 @@ const getPortfolioController = require('../controllers/getPortfolioController');
 const gameController = require('../controllers/gameController');
 
 // Performance route
-router.get('/performance', performanceController.getPerformance);
+router.get('/performance/', performanceController.getPerformance);
 
 // Price update routes
 router.post('/update-prices', priceUpdateController.updatePrices);
@@ -26,7 +26,12 @@ router.get('/portfolio/user/:userId', getPortfolioController.getPortfolio);
 router.post('/gameinit', gameController.initializeGame);
 
 // Advance day route
-router.post('/advanceday/user/:userId', gameController.advanceDay);
+router.get('/advanceday', gameController.advanceDay);
+
+// Get user balance
+router.get('/getbalance', gameController.getUserBalance);
+// Update user balance
+router.post('/updatebalance', gameController.updateUserBalance);
 
 // 买入产品接口：POST /product/:productId/user/:userId
 router.post ('/buy/product/:productId/user/:userId', buyController.buyProduct);
