@@ -1,21 +1,11 @@
-
-
 -- Create new database and switch to it
 CREATE DATABASE IF NOT EXISTS investment_db;
 USE investment_db;
 
--- 用户表
-CREATE TABLE users (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(255) NOT NULL
-);
-
 -- 产品表
 CREATE TABLE product (
     id INT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-		code VARCHAR(255), 
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    name VARCHAR(255) NOT NULL
 );
 
 -- 产品当天价格表
@@ -39,29 +29,24 @@ CREATE TABLE product_quantity (
     FOREIGN KEY (id) REFERENCES product(id)
 );
 
--- 持仓表：使用自增主键 holding_id
+-- 持仓表：增加 holding_id 作为自增主键，product_id 可重复
 CREATE TABLE holdings (
-    id   INT           NOT NULL AUTO_INCREMENT,
-    user_id      INT           NOT NULL,
+    holding_id   INT           NOT NULL AUTO_INCREMENT,
     product_id   INT           NOT NULL,
     buy_price    DECIMAL(18,2) NOT NULL,
     buy_amount   INT           NOT NULL,
-    PRIMARY KEY (id),
-    FOREIGN KEY (user_id) REFERENCES users(id),
+    PRIMARY KEY (holding_id),
     FOREIGN KEY (product_id) REFERENCES product(id)
 );
 
--- 插入默认用户
-INSERT INTO users (id, name) VALUES
-(1, 'Default User');
 
 -- 向产品表插入股票信息
-INSERT INTO product (id, name, code) VALUES
-(1, 'Apple Inc.', 'AAPL.US'),
-(2, 'Microsoft Corporation', '123'),
-(3, 'Amazon.com Inc.', '123'),
-(4, 'Tesla Inc.', 'TSLA.US'),
-(5, 'Alphabet Inc.', '123');
+INSERT INTO product (id, name) VALUES
+(1, 'Apple Inc.'),
+(2, 'Microsoft Corporation'),
+(3, 'Amazon.com Inc.'),
+(4, 'Tesla Inc.'),
+(5, 'Alphabet Inc.');
 
 -- 向产品当天价格表插入价格信息
 INSERT INTO product_price (id, price) VALUES
@@ -135,7 +120,6 @@ INSERT INTO product_type (id, type) VALUES
 INSERT INTO product_quantity (id, amount) VALUES
 (11, 100000);
 
-<<<<<<< HEAD:dbms.sql
 -- 初始profolio表, 供参考,可不用
 INSERT INTO holdings (product_id, buy_price, buy_amount)
 VALUES 
@@ -145,23 +129,3 @@ VALUES
     (9, 98.45, 50),    -- 关联产品ID=9（JP Morgan债券基金）
     (11, 1.00, 10000); -- 关联产品ID=11（人民币现金）
 
-=======
--- 向持仓表插入测试数据（所有数据归属于默认用户 id=1）
-INSERT INTO holdings (user_id, product_id, buy_price, buy_amount) VALUES
--- 股票持仓
-(1, 1, 165.50, 100),  -- Apple Inc. 持仓100股，买入价165.50
-(1, 2, 320.25, 50),   -- Microsoft Corporation 持仓50股，买入价320.25
-(1, 3, 125.80, 80),   -- Amazon.com Inc. 持仓80股，买入价125.80
-(1, 4, 235.60, 30),   -- Tesla Inc. 持仓30股，买入价235.60
-(1, 5, 115.30, 75),   -- Alphabet Inc. 持仓75股，买入价115.30
-
--- 基金持仓
-(1, 6, 395.20, 25),   -- Vanguard S&P 500 ETF 持仓25份，买入价395.20
-(1, 7, 225.40, 40),   -- Fidelity 500 Index Fund 持仓40份，买入价225.40
-(1, 8, 168.75, 60),   -- BlackRock Total Market Fund 持仓60份，买入价168.75
-(1, 9, 92.80, 100),   -- JP Morgan Global Bond Fund 持仓100份，买入价92.80
-(1, 10, 148.90, 20),  -- Goldman Sachs Growth Fund 持仓20份，买入价148.90
-
--- 现金持仓
-(1, 11, 1.00, 50000); -- RMB现金 50,000元
->>>>>>> 7a65ad1be899647e26ffa2d048010bd19af02c5e:src/config/dbms.sql
