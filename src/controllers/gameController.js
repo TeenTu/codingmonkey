@@ -42,7 +42,7 @@ const gameController = {
                     message: 'User ID is required' 
                 });
             }
-
+            await this._updateUserBalance
             const result = await gameModel.advanceDay(userId);
             
             res.json({
@@ -122,7 +122,54 @@ const gameController = {
                 error: error.message
             });
         }
+    },
+    // Internal function for getting user balance (for use by other modules)
+    _getUserBalance: async (userId) => {
+        try {
+            // Data validation
+            if (!userId || !Number.isInteger(Number(userId)) || Number(userId) <= 0) {
+                throw new Error('Invalid user ID: must be a positive integer');
+            }
+
+            const balance = await gameModel.getUserBalance(userId);
+            
+            if (balance === null) {
+                throw new Error('User not found or no balance available');
+            }
+
+            return balance;
+        } catch (error) {
+            throw new Error(`Failed to get user balance: ${error.message}`);
+        }
+    },
+
+    // Internal function for updating user balance (for use by other modules)
+    _updateUserBalance: async (userId, amount) => {
+        try {
+            // Data validation
+            if (!userId || !Number.isInteger(Number(userId)) || Number(userId) <= 0) {
+                throw new Error('Invalid user ID: must be a positive integer');
+            }
+
+            if (amount === undefined || amount === null || isNaN(Number(amount))) {
+                throw new Error('Invalid amount: must be a valid number');
+            }
+
+            const result = await gameModel.updateUserBalance(userId, amount);
+            
+            return result;
+        } catch (error) {
+            throw new Error(`Failed to update user balance: ${error.message}`);
+        }
     }
 };
 
 module.exports = gameController;
+
+// 导出内部函数供其他模块使用Example usage:
+// const gameController = require('./gameController');
+// const result = await gameController._getUserBalance(1);
+// 需要验证result字段success是否为true
+// const result = await gameController._updateUserBalance(1, 1000);
+// 需要验证result字段success是否为true
+

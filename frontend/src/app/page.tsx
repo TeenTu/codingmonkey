@@ -75,7 +75,7 @@ export default function Home() {
     setIsLoading(true);
     
     try {
-      const result = await api.sellProduct(sellProductId, userId, parseFloat(sellAmount));
+      const result = await api.sellProduct(sellProductId, userId, Number(sellAmount));
       setSellResult(result);
       setMessage({ type: 'success', text: '卖出操作成功' });
       
@@ -469,7 +469,7 @@ export default function Home() {
                         </AlertDescription>
                       </Alert>
                       
-                      {sellResult.success && (
+                      {sellResult.success && sellResult.data && (//检查操作是否成功，sellResult.data是否存在
                         <div className="space-y-2">
                           <div className="flex justify-between">
                             <span>卖出数量:</span>
@@ -477,14 +477,14 @@ export default function Home() {
                           </div>
                           <div className="flex justify-between">
                             <span>总盈亏:</span>
-                            <span className={`font-medium ${sellResult.data.profit_summary.total_profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {sellResult.data.profit_summary.total_profit >= 0 ? '+' : ''}¥{sellResult.data.profit_summary.total_profit.toFixed(2)}
+                            <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {Number(sellResult.data.profit_summary.total_profit) >= 0 ? '+' : ''}¥{Number(sellResult.data.profit_summary.total_profit).toFixed(2)}
                             </span>
                           </div>
                           <div className="flex justify-between">
                             <span>盈亏率:</span>
-                            <span className={`font-medium ${sellResult.data.profit_summary.total_profit_percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {sellResult.data.profit_summary.total_profit_percentage >= 0 ? '+' : ''}{sellResult.data.profit_summary.total_profit_percentage.toFixed(2)}%
+                            <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit_percentage) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {Number(sellResult.data.profit_summary.total_profit_percentage) >= 0 ? '+' : ''}{Number(sellResult.data.profit_summary.total_profit_percentage).toFixed(2)}%
                             </span>
                           </div>
                         </div>
