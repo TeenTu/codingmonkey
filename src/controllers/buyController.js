@@ -27,7 +27,7 @@ buyProduct: async (req, res) => {
         if (currentQuantity < amount) {
             return res.status(400).json({
             success: false,
-            message: '库存不足，当前库存: ${currentQuantity}，请求购买: ${amount}'
+            message: `库存不足，当前库存: ${currentQuantity}，请求购买: ${amount}`
         });
         }
 
@@ -39,7 +39,7 @@ buyProduct: async (req, res) => {
         if (currentBalance < totalCost) {
             return res.status(400).json({
             success: false,
-            message: '余额不足，当前余额: ${currentBalance}，请求购买总额: ${totalCost}'
+            message: `余额不足，当前余额: ${currentBalance}，请求购买总额: ${totalCost}`
         });
         }
 
@@ -60,7 +60,7 @@ buyProduct: async (req, res) => {
 
         res.status(200).json({
         success: true,
-        message: '用户 ${userName} 成功${actionType} ${amount} 个单位的 ${productName}，本次花费: ${totalCost} 元',
+        message: `用户 ${userName} 成功${actionType} ${amount} 个单位的 ${productName}，本次花费: ${totalCost} 元`,
         data: {
         holdingId: result.holdingId,
         productId: parseInt (productId),
@@ -68,8 +68,7 @@ buyProduct: async (req, res) => {
         productName,
         userName,
         buyPrice: productPrice,
-        currentHoldingAmount: result.isNewHolding ?
-        amount : await buyModel.getTotalHoldingAmount (productId, userId), // 新增时直接返回 amount，否则查总持仓
+        currentHoldingAmount: result.isNewHolding ? amount : await buyModel.getTotalHoldingAmount (productId, userId), // 新增时直接返回 amount，否则查总持仓
         totalCost: parseFloat (totalCost),
         remainingQuantity: result.remainingQuantity
         }

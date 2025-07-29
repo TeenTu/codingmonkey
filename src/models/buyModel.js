@@ -1,5 +1,6 @@
 const db = require('../config/db');
 
+// const gameModel = require('../models/gameModel');
 
 const buyModel = {
     // 检查产品剩余数量
@@ -23,18 +24,13 @@ const buyModel = {
         
         return rows.length > 0;
     },
-
+    
     // 检查用户余额
     checkUserBalance: async (userId) => {
-        const [rows] = await db.query(`
-             SELECT balance FROM user_cash_balance WHERE id = ?
-            `, [userId]);
-        
-        if (rows.length === 0) {
-            throw new Error('该用户不存在或未设置余额');
-        }
-        
-        return rows[0].amount;
+        const[rows] = await db.query(`
+            SELECT balance FROM user_game_status WHERE user_id = ?
+        `, [userId]);
+        return rows[0].balance;;
     },
     
     // 获取产品当前价格
@@ -88,17 +84,22 @@ const buyModel = {
             }
 
            // 检查余额是否充足
-           const [balanceRows] = await connection.query(`
-                SELECT balance FROM user_cash_balance WHERE id = ? FOR UPDATE
-                `, [userId]);
+            const [balanceRows] = await connection.query(`
+                SELECT balance FROM user_game_status WHERE user_id = ? FOR UPDATE
+            `, [userId]);
+            
             
             if (balanceRows.length === 0) {
              throw new Error('该用户不存在或未设置余额');
             }
             const currentBalance = balanceRows[0].balance;
-            const totalPurchaseAmount = buyAmount * buyPrice
+            const totalPurchaseAmount = buyAmount * buyPrice;
+            console.log(currentBalance, totalPurchaseAmount);
+            
+
             if(currentBalance < totalPurchaseAmount){
-                throw new Error(`余额不足，当前余额: ${currentBalance}，请求购买总金额: ${totalPurchaseAmount}`);   
+                let errorMessage = `余额不足，当前余额: ${currentBalance}，请求购买总金额: ${totalPurchaseAmount}`;
+                throw new Error(errorMessage);   
             }
            
             const existingHolding = await connection.query ( `
@@ -124,10 +125,18 @@ const buyModel = {
                 
             
             // 3. 减少产品库存
-            await connection.query (`
-                UPDATE product_quantity SET amount = amount - ? WHERE id = ? 
-                `, [buyAmount, productId]);
+            const newQuantity = currentQuantity - buyAmount;
             
+            await connection.query (`
+                UPDATE product_quantity SET amount = ? WHERE id = ? 
+                `, [newQuantity, productId]);
+
+            //4. 减少余额
+            const newBalance = currentBalance - totalPurchaseAmount;
+            await connection.query (`
+                UPDATE  user_game_status SET balance =  ? WHERE user_id = ? 
+                `, [newBalance, userId]);
+
             await connection.commit ();
             return {
             holdingId,
@@ -139,6 +148,7 @@ const buyModel = {
             isNewHolding: !existingHolding // 标记是否为新增持仓
             };
             
+
             } catch (error) {
             await connection.rollback();
             throw error;
@@ -147,7 +157,6 @@ const buyModel = {
             }
             },
 
-           //TODO 余额操作?
     
     // 获取产品名称
     getProductName: async (productId) => {
@@ -158,6 +167,15 @@ const buyModel = {
         return rows.length > 0 ? rows[0].name : '未知产品';
     },
     
+    //获取持仓数
+    getTotalHoldingAmount: async (productId, userId) => {
+        const [rows] = await db.query(`
+            SELECT SUM(buy_amount) AS total_amount FROM holdings WHERE product_id = ? AND user_id = ?
+        `, [productId, userId]);
+        
+        return rows[0].total_amount || 0; // 如果没有持仓，返回0
+    },  
+
     // 获取用户名
     getUserName: async (userId) => {
         const [rows] = await db.query(`

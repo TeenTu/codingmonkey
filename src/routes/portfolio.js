@@ -40,7 +40,7 @@ router.post ('/buy/product/:productId/user/:userId', buyController.buyProduct);
 router.get('/product', productController.getAllProducts);
 
 // 根据ID获取单个产品详情
-router.get('/product:productId', productController.getProductById);
+router.get('/productById/:productId', productController.getProductById);
 
 
 module.exports = router;
