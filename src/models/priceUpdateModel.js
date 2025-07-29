@@ -57,10 +57,8 @@ const Price = {
             // 逐个产品更新
             for (const prod of products) {
                 if (prod.type === 'Stock') {
-                    // 查找对应 symbol 在 priceCache.stocks 的 targetDate
-                    // code 可能带 .US，symbol 只存纯代码
-                    const code = prod.code.replace('.US', '');
-                    const stock = priceCache.stocks.find(s => s.symbol === code);
+                    // 直接用code和symbol一一对应
+                    const stock = priceCache.stocks.find(s => s.symbol === prod.code);
                     if (stock) {
                         const priceObj = stock.prices.find(p => p.date === targetDate);
                         if (priceObj && priceObj.close) {
