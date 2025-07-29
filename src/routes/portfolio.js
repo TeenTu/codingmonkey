@@ -3,7 +3,7 @@ const router = express.Router();
 const performanceController = require('../controllers/performanceController');
 const priceUpdateController = require('../controllers/priceUpdateController');
 const sellController = require('../controllers/sellController');
-const getController = require('../controllers/getPortfolioController');
+const getPortfolioController = require('../controllers/getPortfolioController');
 
 // Performance route
 router.get('/performance', performanceController.getPerformance);
