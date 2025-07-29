@@ -62,6 +62,22 @@ export interface AllProductsData {
   };
 }
 
+export interface BuyResult {
+  success: boolean;
+  message: string;
+  data?: {
+    holdingId: number;
+    productId: number;
+    userId: number;
+    productName: string;
+    userName: string;
+    buyPrice: number;
+    currentHoldingAmount: number;
+    totalCost: number;
+    remainingQuantity: number;
+  };
+}
+
 // API函数
 export const api = {
   // 获取投资组合
@@ -161,9 +177,39 @@ export const api = {
       throw error;
     }
   },
+   
+  // 买入产品
+  async buyProduct(productId: string, userId: string, amount: number): Promise<BuyResult> {
+    try {
+      const response = await fetch(`${API_BASE}/buy/product/${productId}/user/${userId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ amount }),
+      });
+      
+      if (!response.ok) {
+        console.log(`productId: ${productId},userId: ${userId}, buyAmount: ${amount}`);
+       
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || '买入操作失败');
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('买入产品失败:', error);
+      throw error;
+    }
+  },
 
   // 更新价格
-  async updatePrices(): Promise<{ success: boolean; message: string }> {
+    async updatePrices(): Promise<{ success: boolean; message: string }> {
     try {
       const response = await fetch(`${API_BASE}/update-prices`, {
         method: 'POST',
@@ -187,7 +233,7 @@ export const api = {
   },
 
   // 获取价格状态
-  async getPriceStatus(): Promise<{ success: boolean; daysUpdated: number; totalDays: number }> {
+  async getPriceStatus(): Promise<{ success: boolean; daysUpdated: number; totalDays: number; currentDay?: number; date?: string }> {
     try {
       const response = await fetch(`${API_BASE}/price-update-status`);
       

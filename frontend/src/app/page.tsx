@@ -32,9 +32,12 @@ import {
   GamepadIcon,
   Search
 } from "lucide-react";
-import { api, type PortfolioItem, type PerformanceData, type SellResult, type AllProductsData, type ProductItem } from "@/lib/api";
+import { api, type PortfolioItem, type PerformanceData, type SellResult, type AllProductsData, type ProductItem, type BuyResult } from "@/lib/api";
 
 export default function Home() {
+  // 当前天数和日期
+  const [currentDay, setCurrentDay] = useState<number | null>(null);
+  const [currentDate, setCurrentDate] = useState<string>("");
   const [userId, setUserId] = useState("1");
   const [sellProductId, setSellProductId] = useState("");
   const [sellAmount, setSellAmount] = useState("");
@@ -115,6 +118,12 @@ export default function Home() {
     setShowGameInitDialog(false);
     loadAllData();
   };
+  const [actionType, setActionType] = useState<'buy' | 'sell'>('sell');
+  const [buyProductId, setBuyProductId] = useState("");
+  const [buyAmount, setBuyAmount] = useState("");
+  const [buyResult, setBuyResult] = useState<BuyResult | null>(null);
+
+
 
   // 加载投资组合数据
   const loadPortfolio = async () => {
@@ -194,6 +203,38 @@ export default function Home() {
     }
   };
 
+  const handleBuy = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      const result = await api.buyProduct(buyProductId, userId, Number(buyAmount));
+      setBuyResult(result);
+      setMessage({ type: 'success', text: '买入操作成功' });
+     
+      // 刷新数据
+      setTimeout(() => {
+        loadUserData();
+      }, 1000);
+    } catch (error) {
+      setBuyResult({
+        success: false,
+        message: '买入操作失败'
+      });
+      setMessage({ type: 'error', text: '买入操作失败' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAction = async (e: React.FormEvent) => {
+    if (actionType === 'sell') {
+      await handleSell(e);
+    } else {
+      await handleBuy(e);
+    }
+  };
+
   // 推进到下一天
   const handleAdvanceDay = async () => {
     if (!confirm('确定要推进到下一天吗？这将更新所有价格。')) {
@@ -205,7 +246,8 @@ export default function Home() {
     try {
       const result = await api.advanceDay(userId);
       setMessage({ type: 'success', text: result.message });
-      
+      if (typeof result.currentDay === 'number') setCurrentDay(result.currentDay);
+      if (typeof result.date === 'string') setCurrentDate(result.date);
       // 刷新数据
       setTimeout(() => {
         loadAllData();
@@ -459,9 +501,9 @@ export default function Home() {
               <TrendingUp className="h-4 w-4" />
               投资表现
             </TabsTrigger>
-            <TabsTrigger value="sell" className="flex items-center gap-2">
+            <TabsTrigger value="action" className="flex items-center gap-2">
               <ShoppingCart className="h-4 w-4" />
-              卖出产品
+              交易操作
             </TabsTrigger>
           </TabsList>
 
@@ -641,44 +683,62 @@ export default function Home() {
           </TabsContent>
 
           {/* 卖出产品标签 */}
-          <TabsContent value="sell">
+          <TabsContent value="action">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <ShoppingCart className="h-5 w-5" />
-                    卖出操作
+                    {actionType === 'sell' ? '卖出操作' : '买入操作'}
                   </CardTitle>
                   <CardDescription>
-                    使用FIFO策略卖出产品
+                    {actionType === 'sell' ? '使用FIFO策略卖出产品' : '买入产品'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleSell} className="space-y-4">
+                  <div className="flex mb-4">
+                    <Button
+                      variant={actionType === 'sell' ? 'default' : 'outline'}
+                      onClick={() => setActionType('sell')}
+                      className="rounded-r-none"
+                    >
+                      卖出
+                    </Button>
+                    <Button
+                      variant={actionType === 'buy' ? 'default' : 'outline'}
+                      onClick={() => setActionType('buy')}
+                      className="rounded-l-none"
+                    >
+                      买入
+                    </Button>
+                  </div>
+                  <form onSubmit={handleAction} className="space-y-4">
                     <div>
                       <Label htmlFor="productId">产品ID</Label>
                       <Input
                         id="productId"
                         type="number"
-                        value={sellProductId}
-                        onChange={(e) => setSellProductId(e.target.value)}
+                        value={actionType === 'sell' ?sellProductId: buyProductId}
+                        onChange={(e) => actionType === 'sell' ? setSellProductId(e.target.value) : setBuyProductId(e.target.value)}
+                        
                         placeholder="输入产品ID"
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="amount">卖出数量</Label>
+                      <Label htmlFor="amount">数量</Label>
                       <Input
                         id="amount"
                         type="number"
-                        value={sellAmount}
-                        onChange={(e) => setSellAmount(e.target.value)}
-                        placeholder="输入卖出数量"
+                        value={actionType === 'sell' ? sellAmount : buyAmount}
+
+                        onChange={(e) => actionType === 'sell' ? setSellAmount(e.target.value) : setBuyAmount(e.target.value)}
+                        placeholder={`输入${actionType === 'sell' ? '卖出' : '买入'}数量`}
                         required
                       />
                     </div>
                     <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "处理中..." : "确认卖出"}
+                      {isLoading ? "处理中..." : `确认${actionType === 'sell' ? '卖出' : '买入'}`}
                     </Button>
                   </form>
                 </CardContent>
@@ -686,10 +746,11 @@ export default function Home() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>卖出结果</CardTitle>
+                  <CardTitle>{actionType === 'sell' ? '卖出结果' : '买入结果'}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {sellResult ? (
+                  {actionType === 'sell' ? (
+                    sellResult ? (
                     <div className="space-y-4">
                       <Alert className={sellResult.success ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
                         <CheckCircle className="h-4 w-4" />
@@ -720,9 +781,49 @@ export default function Home() {
                       )}
                     </div>
                   ) : (
-                    <p className="text-gray-500 text-center py-8">
-                      请先执行卖出操作查看结果
-                    </p>
+                    buyResult ? (
+                      <div className="space-y-4">
+                        <Alert className={buyResult.success ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
+                          <CheckCircle className="h-4 w-4" />
+                          <AlertDescription>
+                            {buyResult.message}
+                          </AlertDescription>
+                        </Alert>
+                        
+                        {buyResult.success && (
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <span>产品名称:</span>
+                              <span className="font-medium">{buyResult.data?.productName}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>买入价格:</span>
+                              <span className="font-medium">¥{buyResult.data?.buyPrice ? Number(buyResult.data.buyPrice).toFixed(2) : '0.00'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>买入数量:</span>
+                              <span className="font-medium">{buyAmount}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>总花费:</span>
+                              <span className="font-medium">¥{buyResult.data?.totalCost.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>当前总持仓:</span>
+                              <span className="font-medium">{buyResult.data?.currentHoldingAmount}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>剩余库存:</span>
+                              <span className="font-medium">{buyResult.data?.remainingQuantity}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-center py-8">
+                        请先执行买入操作查看结果
+                      </p>
+                    )
                   )}
                 </CardContent>
               </Card>
