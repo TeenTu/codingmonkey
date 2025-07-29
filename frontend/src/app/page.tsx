@@ -22,6 +22,7 @@ import {
   Loader2
 } from "lucide-react";
 import { api, type PortfolioItem, type PerformanceData, type SellResult } from "@/lib/api";
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 
 export default function Home() {
   const [userId, setUserId] = useState("1");
@@ -33,6 +34,7 @@ export default function Home() {
   const [performance, setPerformance] = useState<PerformanceData | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [showChart, setShowChart] = useState(false); // toggle button for the donut chat of asset allocation
 
   // 加载投资组合数据
   const loadPortfolio = async () => {
@@ -46,6 +48,19 @@ export default function Home() {
       setLoading(false);
     }
   };
+
+  // Prepare data for Donut Chart of asset allocation
+  const chartData = Object.values(
+    portfolio.reduce((acc: any, item: PortfolioItem) => {
+      if (!acc[item.product_type]) {
+        acc[item.product_type] = { name: item.product_type, value: 0 };
+      }
+      acc[item.product_type].value += item.current_price * item.buy_amount;
+      return acc;
+    }, {})
+  );
+
+  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
   // 加载投资表现数据
   const loadPerformance = async () => {
@@ -245,16 +260,61 @@ export default function Home() {
           {/* 投资组合标签 */}
           <TabsContent value="portfolio">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Briefcase className="h-5 w-5" />
-                  投资组合详情
-                </CardTitle>
-                <CardDescription>
-                  查看您的所有投资产品和持仓情况
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Briefcase className="h-5 w-5" />
+                投资组合详情
+              </CardTitle>
+              <CardDescription>
+                查看您的所有投资产品和持仓情况
+              </CardDescription>
+              {/* [NEW] Toggle + Load buttons */}
+              <div className="mt-4 flex gap-2">
+                <Button onClick={() => setShowChart(!showChart)} variant="outline">
+                  {showChart ? "查看表格" : "查看图表"}
+                </Button>
+                <Button className="ml-2" onClick={loadPortfolio} disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" /> 加载中...
+                    </>
+                  ) : (
+                    "加载数据"
+                  )}
+                </Button>
+              </div>
+            </CardHeader>
+
+            <CardContent>
+              {loading ? (
+                <div className="text-center">
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                  <p className="mt-2 text-gray-500">加载中...</p>
+                </div>
+              ) : showChart ? (
+                // [NEW] Donut Chart
+                <ResponsiveContainer width="100%" height={350}>
+                  <PieChart>
+                    <Pie
+                      data={chartData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={120}
+                      dataKey="value"
+                      label={(entry: { name: string; percent: number }) =>
+                        `${entry.name}: ${(entry.percent * 100).toFixed(1)}%`
+                      }
+                    >
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => `¥${value.toFixed(2)}`} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                // Existing table
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
@@ -269,18 +329,11 @@ export default function Home() {
                       </tr>
                     </thead>
                     <tbody>
-                      {loading ? (
-                        <tr>
-                          <td colSpan={7} className="p-4 text-center">
-                            <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                            <p className="mt-2 text-gray-500">加载中...</p>
-                          </td>
-                        </tr>
-                      ) : portfolio.length > 0 ? (
+                      {portfolio.length > 0 ? (
                         portfolio.map((item: PortfolioItem) => (
                           <tr key={item.holding_id} className="border-b hover:bg-gray-50">
                             <td className="p-2 font-medium">{item.product_name}</td>
-                            <td className="p-2">{item.product_code || '-'}</td>
+                            <td className="p-2">{item.product_code || "-"}</td>
                             <td className="p-2">{item.product_type}</td>
                             <td className="p-2">¥{item.buy_price.toFixed(2)}</td>
                             <td className="p-2">{item.buy_amount}</td>
@@ -298,7 +351,8 @@ export default function Home() {
                     </tbody>
                   </table>
                 </div>
-              </CardContent>
+              )}
+            </CardContent>
             </Card>
           </TabsContent>
 
