@@ -11,7 +11,7 @@ const getPortfolioModel = {
                 p.name AS product_name,
                 p.code AS product_code,
                 pt.type AS product_type,
-                pq.amount AS available_inventory,   -- 库存 (inventory)
+                pq.amount AS available_amount,   -- 库存
                 h.buy_price,
                 h.buy_amount,
                 pp.price AS current_price
