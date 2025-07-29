@@ -65,9 +65,10 @@ export default function Home() {
     await Promise.all([loadPortfolio(), loadPerformance()]);
   };
 
-  // 初始加载
+  // 初始加载: Start with empty portfolio and only load when user clicks
   useEffect(() => {
-    loadUserData();
+    setPortfolio([]); 
+    setPerformance(null);
   }, []);
 
   const handleSell = async (e: React.FormEvent) => {
@@ -184,7 +185,7 @@ export default function Home() {
                     placeholder="输入用户ID"
                   />
                 </div>
-                                 <Button className="w-full" onClick={loadUserData} disabled={loading}>
+                  <Button className="w-full" onClick={loadUserData} disabled={loading}>
                    {loading ? (
                      <>
                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
