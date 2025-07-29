@@ -205,7 +205,7 @@ export const api = {
   },
 
   // 获取价格状态
-  async getPriceStatus(): Promise<{ success: boolean; daysUpdated: number; totalDays: number }> {
+  async getPriceStatus(): Promise<{ success: boolean; daysUpdated: number; totalDays: number; currentDay?: number; date?: string }> {
     try {
       const response = await fetch(`${API_BASE}/price-update-status`);
       

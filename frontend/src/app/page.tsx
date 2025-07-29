@@ -24,6 +24,9 @@ import {
 import { api, type PortfolioItem, type PerformanceData, type SellResult, type BuyResult } from "@/lib/api";
 
 export default function Home() {
+  // 当前天数和日期
+  const [currentDay, setCurrentDay] = useState<number | null>(null);
+  const [currentDate, setCurrentDate] = useState<string>("");
   const [userId, setUserId] = useState("1");
   const [sellProductId, setSellProductId] = useState("");
   const [sellAmount, setSellAmount] = useState("");
@@ -137,7 +140,8 @@ export default function Home() {
       setLoading(true);
       const result = await api.updatePrices();
       setMessage({ type: 'success', text: result.message });
-      
+      if (typeof result.currentDay === 'number') setCurrentDay(result.currentDay);
+      if (typeof result.date === 'string') setCurrentDate(result.date);
       // 刷新数据
       setTimeout(() => {
         loadUserData();
@@ -153,6 +157,8 @@ export default function Home() {
     try {
       const result = await api.getPriceStatus();
       setMessage({ type: 'success', text: `价格状态: 已更新${result.daysUpdated}天，共${result.totalDays}天` });
+      if ('currentDay' in result && typeof result.currentDay === 'number') setCurrentDay(result.currentDay);
+      if ('date' in result && typeof result.date === 'string') setCurrentDate(result.date);
     } catch (error) {
       setMessage({ type: 'error', text: '获取价格状态失败' });
     }
@@ -244,15 +250,19 @@ export default function Home() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2 items-center">
                 <Button variant="outline" onClick={updatePrices}>
                   <RefreshCw className="h-4 w-4 mr-2" />
                   更新价格
                 </Button>
-                <Button variant="outline" onClick={getPriceStatus}>
-                  <Info className="h-4 w-4 mr-2" />
-                  价格状态
-                </Button>
+                <div className="col-span-1 flex flex-col items-center justify-center">
+                  {currentDay && currentDate ? (
+                    <div className="text-2xl font-bold leading-tight text-gray-900 text-center">
+                      <div>{`第${currentDay}天`}</div>
+                      <div>{currentDate}</div>
+                    </div>
+                  ) : null}
+                </div>
                 <Button variant="outline" onClick={resetPriceDays}>
                   <AlertCircle className="h-4 w-4 mr-2" />
                   重置天数
