@@ -11,22 +11,16 @@ const getPortfolioModel = {
                 p.name AS product_name,
                 p.code AS product_code,
                 pt.type AS product_type,
+                pq.amount AS available_amount,   -- 库存
                 h.buy_price,
                 h.buy_amount,
-                pp.price AS current_price,
-                (h.buy_amount * h.buy_price) AS total_buy_value,
-                (h.buy_amount * pp.price) AS total_current_value,
-                ((pp.price - h.buy_price) * h.buy_amount) AS profit_loss,
-                CASE
-                    WHEN h.buy_price > 0 
-                        THEN ((pp.price - h.buy_price) / h.buy_price) * 100
-                    ELSE 0
-                END AS profit_loss_percentage
+                pp.price AS current_price
             FROM holdings h
             JOIN users u ON h.user_id = u.id
             JOIN product p ON h.product_id = p.id
-            JOIN product_type pt ON p.id = pt.id
-            JOIN product_price pp ON p.id = pp.id
+            LEFT JOIN product_type pt ON p.id = pt.id
+            LEFT JOIN product_price pp ON p.id = pp.id
+            LEFT JOIN product_quantity pq ON p.id = pq.id
             WHERE u.id = ?
             ORDER BY h.id ASC
         `, [userId]);
