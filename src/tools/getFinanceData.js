@@ -1,7 +1,9 @@
 const yf = require('yahoo-finance2').default;
 const { subDays, format } = require('date-fns');
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+
 const pLimit = require('p-limit');
+const priceCache = require('./priceCache');
 
 // 你的 code 列表
 const stocks = [
@@ -44,6 +46,7 @@ async function fetchHistWithName(sym) {
   }));
 }
 
+
 //Stocks
 (async () => {
   const stocksResults = [];
@@ -69,31 +72,48 @@ async function fetchHistWithName(sym) {
 
   await stockscsvWriter.writeRecords(stocksResults);
   console.log('导出完成，文件名: stocksprices.csv');
+
+  // 整理为 { symbol, shortname, prices: [{date, close}, ...] }
+  const grouped = {};
+  for (const row of stocksResults) {
+    if (!grouped[row.symbol]) grouped[row.symbol] = { symbol: row.symbol, shortname: row.shortname, prices: [] };
+    grouped[row.symbol].prices.push({ date: row.date, close: row.close });
+  }
+  priceCache.stocks = Object.values(grouped);
 })();
+
 
 //Funds
 (async () => {
-    const fundsResults = [];
-    const promises = funds.map(sym =>
-      limit(() =>
-        fetchHistWithName(sym)
-          .then(arr => fundsResults.push(...arr))
-          .catch(err => console.error(sym, err.message))
-      )
-    );
-    await Promise.all(promises);
-  
-    // 写入 CSV
-    const fundscsvWriter = createCsvWriter({
-      path: 'fundsprices.csv',
-      header: [
-        {id: 'symbol', title: 'Symbol'},
-        {id: 'shortname', title: 'ShortName'},
-        {id: 'date', title: 'Date'},
-        {id: 'close', title: 'Close'}
-      ]
-    });
-  
-    await fundscsvWriter.writeRecords(fundsResults);
-    console.log('导出完成，文件名: fundsprices.csv');
-  })();
+  const fundsResults = [];
+  const promises = funds.map(sym =>
+    limit(() =>
+      fetchHistWithName(sym)
+        .then(arr => fundsResults.push(...arr))
+        .catch(err => console.error(sym, err.message))
+    )
+  );
+  await Promise.all(promises);
+
+  // 写入 CSV
+  const fundscsvWriter = createCsvWriter({
+    path: 'fundsprices.csv',
+    header: [
+      {id: 'symbol', title: 'Symbol'},
+      {id: 'shortname', title: 'ShortName'},
+      {id: 'date', title: 'Date'},
+      {id: 'close', title: 'Close'}
+    ]
+  });
+
+  await fundscsvWriter.writeRecords(fundsResults);
+  console.log('导出完成，文件名: fundsprices.csv');
+
+  // 整理为 { symbol, shortname, prices: [{date, close}, ...] }
+  const grouped = {};
+  for (const row of fundsResults) {
+    if (!grouped[row.symbol]) grouped[row.symbol] = { symbol: row.symbol, shortname: row.shortname, prices: [] };
+    grouped[row.symbol].prices.push({ date: row.date, close: row.close });
+  }
+  priceCache.funds = Object.values(grouped);
+})();

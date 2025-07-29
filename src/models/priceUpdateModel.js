@@ -1,8 +1,7 @@
 
 const db = require('../config/db');
-const fs = require('fs');
-const path = require('path');
-const { parse } = require('csv-parse/sync');
+
+const priceCache = require('../tools/priceCache');
 
 // 保存当前更新到第几天
 let currentDay = 0;
@@ -26,18 +25,16 @@ const Price = {
                 JOIN product_type pt ON p.id = pt.id
             `);
 
-            // 读取并解析 CSV 文件
-            const stocksCsvPath = path.join(__dirname, '../tools/stocksprices.csv');
-            const fundsCsvPath = path.join(__dirname, '../tools/fundsprices.csv');
-            const stocksCsv = fs.readFileSync(stocksCsvPath, 'utf8');
-            const fundsCsv = fs.readFileSync(fundsCsvPath, 'utf8');
-            const stocksData = parse(stocksCsv, { columns: true, skip_empty_lines: true });
-            const fundsData = parse(fundsCsv, { columns: true, skip_empty_lines: true });
 
+            // 用 priceCache 里的数据
             // 收集所有日期
             const allDatesSet = new Set();
-            for (const row of stocksData) allDatesSet.add(row.Date);
-            for (const row of fundsData) allDatesSet.add(row.Date);
+            for (const stock of priceCache.stocks) {
+                for (const p of stock.prices) allDatesSet.add(p.date);
+            }
+            for (const fund of priceCache.funds) {
+                for (const p of fund.prices) allDatesSet.add(p.date);
+            }
             const allDates = Array.from(allDatesSet).sort();
 
             if (currentDay >= allDates.length) {
@@ -60,21 +57,28 @@ const Price = {
             // 逐个产品更新
             for (const prod of products) {
                 if (prod.type === 'Stock') {
-                    // 查找对应 code 在 stocksData 的 targetDate
-                    const row = stocksData.find(r => r.Code === prod.code && r.Date === targetDate);
-                    if (row && row.Close) {
-                        const price = parseFloat(row.Close);
-                        if (!isNaN(price)) {
-                            await db.query('UPDATE product_price SET price = ? WHERE id = ?', [price, prod.id]);
+                    // 查找对应 symbol 在 priceCache.stocks 的 targetDate
+                    // code 可能带 .US，symbol 只存纯代码
+                    const code = prod.code.replace('.US', '');
+                    const stock = priceCache.stocks.find(s => s.symbol === code);
+                    if (stock) {
+                        const priceObj = stock.prices.find(p => p.date === targetDate);
+                        if (priceObj && priceObj.close) {
+                            const price = parseFloat(priceObj.close);
+                            if (!isNaN(price)) {
+                                await db.query('UPDATE product_price SET price = ? WHERE id = ?', [price, prod.id]);
+                            }
                         }
                     }
                 } else if (prod.type === 'Fund') {
-                    // 查找对应 code 在 fundsData 的 targetDate
-                    const row = fundsData.find(r => r.Code === prod.code && r.Date === targetDate);
-                    if (row && row.Close) {
-                        const price = parseFloat(row.Close);
-                        if (!isNaN(price)) {
-                            await db.query('UPDATE product_price SET price = ? WHERE id = ?', [price, prod.id]);
+                    const fund = priceCache.funds.find(f => f.symbol === prod.code);
+                    if (fund) {
+                        const priceObj = fund.prices.find(p => p.date === targetDate);
+                        if (priceObj && priceObj.close) {
+                            const price = parseFloat(priceObj.close);
+                            if (!isNaN(price)) {
+                                await db.query('UPDATE product_price SET price = ? WHERE id = ?', [price, prod.id]);
+                            }
                         }
                     }
                 } else if (prod.type === 'Cash') {
