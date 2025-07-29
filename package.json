@@ -2,9 +2,9 @@
   "name": "nodehsbc",
   "version": "1.0.0",
   "description": "project",
-  "main": "server.js",
+  "main": "src/app.js",
   "scripts": {
-    "start": "node server.js run",
+    "start": "node src/app.js run",
     "test": "jest"
   },
   "author": "Leo",
@@ -14,11 +14,13 @@
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "express-session": "^1.18.2",
+    "morgan": "^1.10.1",
     "mysql2": "^3.14.2",
     "winston": "^3.17.0"
   },
   "devDependencies": {
     "jest": "^30.0.5",
+    "nodemon": "^3.0.1",
     "supertest": "^7.1.4"
   }
 }
