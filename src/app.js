@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const portfolioRoutes = require('./routes/portfolio');
-const sellRoutes = require('./routes/sellRouter');
+
 
 // Initialize express app
 const app = express();
@@ -31,6 +31,7 @@ app.get('/', (req, res) => {
 
 // Routes
 app.use('/api', portfolioRoutes);
+// app.use('/sell', sellRoutes); // 已注释，避免找不到模块报错
 
 // Error handling middleware
 app.use((err, req, res, next) => {
