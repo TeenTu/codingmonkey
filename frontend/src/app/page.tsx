@@ -34,6 +34,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [actionType, setActionType] = useState<'buy' | 'sell'>('sell');
+  const [buyProductId, setBuyProductId] = useState("");
+  const [buyAmount, setBuyAmount] = useState("");
   const [buyResult, setBuyResult] = useState<BuyResult | null>(null);
 
 
@@ -103,7 +105,7 @@ export default function Home() {
     setIsLoading(true);
     
     try {
-      const result = await api.buyProduct(sellProductId, userId, parseFloat(sellAmount));
+      const result = await api.buyProduct(buyProductId, userId, parseFloat(buyAmount));
       setBuyResult(result);
       setMessage({ type: 'success', text: '买入操作成功' });
       
@@ -488,8 +490,8 @@ export default function Home() {
                       <Input
                         id="productId"
                         type="number"
-                        value={sellProductId}
-                        onChange={(e) => setSellProductId(e.target.value)}
+                        value={buyProductId}
+                        onChange={(e) => setBuyProductId(e.target.value)}
                         placeholder="输入产品ID"
                         required
                       />
