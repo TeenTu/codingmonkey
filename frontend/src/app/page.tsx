@@ -10,6 +10,16 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { 
   Briefcase, 
   TrendingUp, 
   ShoppingCart, 
@@ -19,7 +29,8 @@ import {
   Info,
   CheckCircle,
   AlertCircle,
-  Loader2
+  Loader2,
+  GamepadIcon
 } from "lucide-react";
 import { api, type PortfolioItem, type PerformanceData, type SellResult } from "@/lib/api";
 
@@ -33,6 +44,69 @@ export default function Home() {
   const [performance, setPerformance] = useState<PerformanceData | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // 模拟投资初始化相关状态
+  const [showGameInitDialog, setShowGameInitDialog] = useState(false);
+  const [initialBalance, setInitialBalance] = useState("500000");
+  const [gameRemainDays, setGameRemainDays] = useState("30");
+  const [gameInitLoading, setGameInitLoading] = useState(false);
+
+  // 检查是否需要显示模拟投资初始化弹窗
+  useEffect(() => {
+    const hasInitialized = localStorage.getItem(`game_initialized_user_${userId}`);
+    if (!hasInitialized) {
+      setShowGameInitDialog(true);
+    } else {
+      loadUserData();
+    }
+  }, [userId]);
+
+  // 当用户ID改变时，重置相关状态
+  useEffect(() => {
+    setPortfolio([]);
+    setPerformance(null);
+    setSellResult(null);
+    setMessage(null);
+  }, [userId]);
+
+  // 模拟投资初始化处理
+  const handleGameInit = async () => {
+    setGameInitLoading(true);
+    
+    try {
+      const result = await api.initializeGame(
+        userId, 
+        Number(initialBalance), 
+        Number(gameRemainDays)
+      );
+      
+      if (result.success) {
+        // 标记用户已初始化
+        localStorage.setItem(`game_initialized_user_${userId}`, 'true');
+        setShowGameInitDialog(false);
+        setMessage({ type: 'success', text: result.message });
+        
+        // 加载用户数据
+        setTimeout(() => {
+          loadUserData();
+        }, 500);
+      }
+    } catch (error) {
+      setMessage({ 
+        type: 'error', 
+        text: error instanceof Error ? error.message : '模拟投资初始化失败' 
+      });
+    } finally {
+      setGameInitLoading(false);
+    }
+  };
+
+  // 跳过模拟投资初始化
+  const handleSkipGameInit = () => {
+    localStorage.setItem(`game_initialized_user_${userId}`, 'true');
+    setShowGameInitDialog(false);
+    loadUserData();
+  };
 
   // 加载投资组合数据
   const loadPortfolio = async () => {
@@ -135,6 +209,70 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* 模拟投资初始化弹窗 */}
+      <AlertDialog open={showGameInitDialog} onOpenChange={() => {}}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <GamepadIcon className="h-5 w-5" />
+              模拟投资初始化设置
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              欢迎来到投资管理系统！请设置您的初始资金和游戏天数。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="initialBalance">初始资金（¥）</Label>
+              <Input
+                id="initialBalance"
+                type="number"
+                value={initialBalance}
+                onChange={(e) => setInitialBalance(e.target.value)}
+                placeholder="请输入初始资金"
+                min="1000"
+                step="1000"
+              />
+              <p className="text-xs text-gray-500">建议金额：50万元以上</p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="gameRemainDays">剩余天数</Label>
+              <Input
+                id="gameRemainDays"
+                type="number"
+                value={gameRemainDays}
+                onChange={(e) => setGameRemainDays(e.target.value)}
+                placeholder="请输入投资周期"
+                min="1"
+                max="365"
+              />
+              <p className="text-xs text-gray-500">推荐：30-90天</p>
+            </div>
+          </div>
+          
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleSkipGameInit}>
+              跳过设置
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleGameInit} 
+              disabled={gameInitLoading || !initialBalance || !gameRemainDays}
+            >
+              {gameInitLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  初始化中...
+                </>
+              ) : (
+                '开始游戏'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="container mx-auto py-8 px-4">
         {/* 消息提示 */}
         {message && (
@@ -154,50 +292,43 @@ export default function Home() {
           </div>
         )}
         {/* 头部 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            投资管理系统
-          </h1>
-          <p className="text-gray-600">
-            管理您的投资组合，跟踪表现，执行交易
-          </p>
+        <div className="flex justify-between items-start mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              投资管理系统
+            </h1>
+            <p className="text-gray-600">
+              管理您的投资组合，跟踪表现，执行交易
+            </p>
+          </div>
+          
+          {/* 用户状态显示 */}
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-sm text-gray-600">当前用户</p>
+              <p className="font-semibold text-gray-900">用户 ID: {userId}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                value={userId}
+                onChange={(e) => setUserId(e.target.value)}
+                placeholder="用户ID"
+                className="w-20 h-8 text-sm"
+              />
+              <Button size="sm" onClick={loadUserData} disabled={loading}>
+                {loading ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3 w-3" />
+                )}
+              </Button>
+            </div>
+          </div>
         </div>
 
-        {/* 用户选择和快速操作 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Briefcase className="h-5 w-5" />
-                用户设置
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="userId">用户ID</Label>
-                  <Input
-                    id="userId"
-                    type="number"
-                    value={userId}
-                    onChange={(e) => setUserId(e.target.value)}
-                    placeholder="输入用户ID"
-                  />
-                </div>
-                                 <Button className="w-full" onClick={loadUserData} disabled={loading}>
-                   {loading ? (
-                     <>
-                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                       加载中...
-                     </>
-                   ) : (
-                     '加载数据'
-                   )}
-                 </Button>
-              </div>
-            </CardContent>
-          </Card>
-
+        {/* 快速操作 */}
+        <div className="mb-8">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -206,7 +337,7 @@ export default function Home() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <Button variant="outline" onClick={updatePrices}>
                   <RefreshCw className="h-4 w-4 mr-2" />
                   更新价格
@@ -341,11 +472,11 @@ export default function Home() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-600">总盈亏</p>
-                                                 <p className={`text-2xl font-bold ${performance?.totalGainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                           {performance?.totalGainLoss >= 0 ? '+' : ''}¥{performance?.totalGainLoss.toFixed(2) || '0.00'}
+                                                 <p className={`text-2xl font-bold ${(performance?.totalGainLoss ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                           {(performance?.totalGainLoss ?? 0) >= 0 ? '+' : ''}¥{performance?.totalGainLoss?.toFixed(2) || '0.00'}
                          </p>
                        </div>
-                       {performance?.totalGainLoss >= 0 ? (
+                       {(performance?.totalGainLoss ?? 0) >= 0 ? (
                         <TrendingUp className="h-8 w-8 text-green-600" />
                       ) : (
                         <TrendingDown className="h-8 w-8 text-red-600" />
@@ -359,8 +490,8 @@ export default function Home() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-600">总盈亏率</p>
-                                                 <p className={`text-2xl font-bold ${performance?.totalGainLossPercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                           {performance?.totalGainLossPercentage >= 0 ? '+' : ''}{performance?.totalGainLossPercentage.toFixed(2) || '0.00'}%
+                                                 <p className={`text-2xl font-bold ${(performance?.totalGainLossPercentage ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                           {(performance?.totalGainLossPercentage ?? 0) >= 0 ? '+' : ''}{performance?.totalGainLossPercentage?.toFixed(2) || '0.00'}%
                          </p>
                       </div>
                       <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
