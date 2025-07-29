@@ -4,6 +4,7 @@ const performanceController = require('../controllers/performanceController');
 const priceUpdateController = require('../controllers/priceUpdateController');
 const sellController = require('../controllers/sellController');
 const getPortfolioController = require('../controllers/getPortfolioController');
+const gameController = require('../controllers/gameController');
 
 // Performance route
 router.get('/performance', performanceController.getPerformance);
@@ -18,5 +19,11 @@ router.post('/sell/product/:productId/user/:userId', sellController.sellProductF
 
 // Browse/Get portfolio
 router.get('/portfolio/user/:userId', getPortfolioController.getPortfolio);
+
+// Game initialization route
+router.post('/gameinit', gameController.initializeGame);
+
+// Advance day route
+router.post('/advanceday/user/:userId', gameController.advanceDay);
 
 module.exports = router;
