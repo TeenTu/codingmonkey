@@ -79,11 +79,18 @@ const sellModel = {
                     buy_value: buyValue,
                     sell_value: sellValue,
                     profit: profit,
-                    profit_percentage: ((currentPrice - holding.buy_price) / holding.buy_price) * 100 //TODO: 负数计算可能有bug，需要测试
+                    profit_percentage: ((currentPrice - holding.buy_price) / holding.buy_price) * 100
                 });
 
                 remainingSellAmount -= sellFromThisHolding;
             }
+
+            // 将卖出的数量放回到product_quantity表中
+            await connection.query(`
+                UPDATE product_quantity 
+                SET amount = amount + ? 
+                WHERE product_id = ?
+            `, [sellAmount, productId]);
 
             if (remainingSellAmount > 0) {
                 throw new Error(`可卖出数量不足，还需要 ${remainingSellAmount} 单位`);
