@@ -869,7 +869,9 @@ export default function Home() {
             <TradingOperation 
               userId={userId} 
               selectedProduct={null} 
-              onTradeComplete={handleTradeComplete} 
+              onTradeComplete={handleTradeComplete}
+              allProducts={allProducts}
+              gameStatus={gameStatus}
             />
           </TabsContent>
 
