@@ -523,39 +523,39 @@ export default function Home() {
                 <CardContent>
                   {actionType === 'sell' ? (
                     sellResult ? (
-                      <div className="space-y-4">
-                        <Alert className={sellResult.success ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
-                          <CheckCircle className="h-4 w-4" />
-                          <AlertDescription>
-                            {sellResult.message}
-                          </AlertDescription>
-                        </Alert>
-                        
-                        {sellResult.success && (
-                          <div className="space-y-2">
-                            <div className="flex justify-between">
-                              <span>卖出数量:</span>
+                    <div className="space-y-4">
+                      <Alert className={sellResult.success ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
+                        <CheckCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          {sellResult.message}
+                        </AlertDescription>
+                      </Alert>
+                      
+                      {sellResult.success && (
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span>卖出数量:</span>
                               <span className="font-medium">{sellResult.data?.sold_amount}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>总盈亏:</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>总盈亏:</span>
                               <span className={`font-medium ${sellResult.data?.profit_summary.total_profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                 {sellResult.data?.profit_summary.total_profit >= 0 ? '+' : ''}¥{sellResult.data?.profit_summary.total_profit.toFixed(2)}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>盈亏率:</span>
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>盈亏率:</span>
                               <span className={`font-medium ${sellResult.data?.profit_summary.total_profit_percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                 {sellResult.data?.profit_summary.total_profit_percentage >= 0 ? '+' : ''}{sellResult.data?.profit_summary.total_profit_percentage.toFixed(2)}%
-                              </span>
-                            </div>
+                            </span>
                           </div>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-gray-500 text-center py-8">
-                        请先执行卖出操作查看结果
-                      </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-center py-8">
+                      请先执行卖出操作查看结果
+                    </p>
                     )
                   ) : (
                     buyResult ? (

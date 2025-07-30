@@ -17,7 +17,7 @@ const priceUpdateController = {
         }
     },
 
-    // 获取更新状态
+    // gh
     getStatus: (req, res) => {
         try {
             const status = Price.getUpdateStatus();
