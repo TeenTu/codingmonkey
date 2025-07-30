@@ -235,6 +235,65 @@ const gameModel = {
             connection.release();
         }
     },
+
+    // Restart game by resetting all data
+    restartGame: async (userId) => {
+        const connection = await db.getConnection();
+        
+        try {
+            await connection.beginTransaction();
+            
+            // 检查用户是否存在
+            const [userCheck] = await connection.execute(
+                'SELECT id FROM users WHERE id = ?',
+                [userId]
+            );
+            
+            if (userCheck.length === 0) {
+                throw new Error('User does not exist');
+            }
+            
+            // 删除用户持仓
+            await connection.execute(
+                'DELETE FROM holdings WHERE user_id = ?',
+                [userId]
+            );
+            
+            // 删除用户游戏状态
+            await connection.execute(
+                'DELETE FROM user_game_status WHERE user_id = ?',
+                [userId]
+            );
+            
+            // 重置所有产品库存到初始状态
+            // 股票产品 (1-30) 重置为 1000
+            await connection.execute(`
+                UPDATE product_quantity 
+                SET amount = 1000 
+                WHERE id BETWEEN 1 AND 30
+            `);
+            
+            // 基金产品 (31-45) 重置为 2000
+            await connection.execute(`
+                UPDATE product_quantity 
+                SET amount = 2000 
+                WHERE id BETWEEN 31 AND 45
+            `);
+            
+            await connection.commit();
+            
+            return {
+                userId,
+                message: 'Game restart completed successfully. All holdings cleared and product quantities reset.'
+            };
+            
+        } catch (error) {
+            await connection.rollback();
+            throw new Error(`Error restarting game: ${error.message}`);
+        } finally {
+            connection.release();
+        }
+    },
 };
 
 module.exports = gameModel;
