@@ -268,19 +268,21 @@ export default function Home() {
               <CardDescription>
                 查看您的所有投资产品和持仓情况
               </CardDescription>
-              {/* [NEW] Toggle + Load buttons */}
+              {/* Updated Toggle Buttons */}
               <div className="mt-4 flex gap-2">
-                <Button onClick={() => setShowChart(!showChart)} variant="outline">
-                  {showChart ? "查看表格" : "查看图表"}
+                <Button
+                  onClick={() => setShowChart(false)}
+                  variant="outline"
+                  className={showChart ? "bg-white text-gray-700" : "bg-blue-500 text-white"}
+                >
+                  查看表格
                 </Button>
-                <Button className="ml-2" onClick={loadPortfolio} disabled={loading}>
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" /> 加载中...
-                    </>
-                  ) : (
-                    "加载数据"
-                  )}
+                <Button
+                  onClick={() => setShowChart(true)}
+                  variant="outline"
+                  className={showChart ? "bg-blue-500 text-white" : "bg-white text-gray-700"}
+                >
+                  查看图表
                 </Button>
               </div>
             </CardHeader>
