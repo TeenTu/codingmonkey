@@ -20,14 +20,15 @@ const gameModel = {
             
             // 初始化或更新用户游戏状态
             await connection.execute(`
-                INSERT INTO user_game_status (user_id, balance, remain_days, is_game_over) 
-                VALUES (?, ?, ?, FALSE) 
+                INSERT INTO user_game_status (user_id, balance, remain_days, max_day, is_game_over) 
+                VALUES (?, ?, ?, ?, FALSE) 
                 ON DUPLICATE KEY UPDATE 
                 balance = VALUES(balance),
                 remain_days = VALUES(remain_days),
+                max_day = VALUES(max_day),
                 is_game_over = FALSE,
                 updated_at = CURRENT_TIMESTAMP
-            `, [userId, initialBalance, gameRemainDays]);
+            `, [userId, initialBalance, gameRemainDays, gameRemainDays]);
             
             await connection.commit();
             
@@ -35,6 +36,7 @@ const gameModel = {
                 userId,
                 initialBalance,
                 gameRemainDays,
+                maxDay: gameRemainDays,
                 message: 'Game initialization completed'
             };
             
@@ -55,7 +57,7 @@ const gameModel = {
             
             // 检查用户游戏状态
             const [gameStatus] = await connection.execute(
-                'SELECT balance, remain_days, is_game_over FROM user_game_status WHERE user_id = ?',
+                'SELECT balance, remain_days, max_day, is_game_over FROM user_game_status WHERE user_id = ?',
                 [userId]
             );
             
@@ -108,6 +110,7 @@ const gameModel = {
                     ugs.user_id,
                     ugs.balance,
                     ugs.remain_days,
+                    ugs.max_day,
                     ugs.is_game_over,
                     ugs.created_at,
                     ugs.updated_at,

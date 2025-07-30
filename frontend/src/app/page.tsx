@@ -60,6 +60,9 @@ export default function Home() {
   const [showProductDetail, setShowProductDetail] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string>("");
 
+  // 产品类型筛选状态
+  const [productFilter, setProductFilter] = useState<'all' | 'stocks' | 'funds'>('all');
+
   // 检查是否需要显示模拟投资初始化弹窗
   useEffect(() => {
     const hasInitialized = localStorage.getItem(`game_initialized_user_${userId}`);
@@ -338,10 +341,10 @@ export default function Home() {
         </div>
 
         {/* 主要内容 - 添加网格布局 */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[calc(100vh-240px)]">
           {/* 左侧边栏 - 产品列表 */}
           <div className="lg:col-span-1">
-            <Card className="h-fit sticky top-4">
+            <Card className="max-h-[80vh] flex flex-col overflow-hidden">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Search className="h-5 w-5" />
@@ -350,17 +353,44 @@ export default function Home() {
                 <CardDescription>
                   浏览所有可投资的股票和基金
                 </CardDescription>
+                {/* 产品类型筛选按钮 */}
+                <div className="flex gap-1 mt-2">
+                  <Button
+                    size="sm"
+                    variant={productFilter === 'all' ? 'default' : 'outline'}
+                    onClick={() => setProductFilter('all')}
+                    className="text-xs px-2 py-1"
+                  >
+                    全部
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={productFilter === 'stocks' ? 'default' : 'outline'}
+                    onClick={() => setProductFilter('stocks')}
+                    className="text-xs px-2 py-1"
+                  >
+                    股票
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={productFilter === 'funds' ? 'default' : 'outline'}
+                    onClick={() => setProductFilter('funds')}
+                    className="text-xs px-2 py-1"
+                  >
+                    基金
+                  </Button>
+                </div>
               </CardHeader>
-              <CardContent className="p-0">
+              <CardContent className="p-0 flex-1 flex flex-col min-h-0">
                 {productsLoading ? (
                   <div className="p-6 text-center">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
                     <p className="text-sm text-gray-500">加载产品中...</p>
                   </div>
                 ) : allProducts ? (
-                  <div className="max-h-96 overflow-y-auto">
+                  <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                     {/* 股票部分 */}
-                    {allProducts.stocks.length > 0 && (
+                    {(productFilter === 'all' || productFilter === 'stocks') && allProducts.stocks.length > 0 && (
                       <div>
                         <div className="px-4 py-2 bg-gray-50 border-b">
                           <h3 className="font-medium text-sm text-gray-700">
@@ -398,7 +428,7 @@ export default function Home() {
                     )}
                     
                     {/* 基金部分 */}
-                    {allProducts.funds.length > 0 && (
+                    {(productFilter === 'all' || productFilter === 'funds') && allProducts.funds.length > 0 && (
                       <div>
                         <div className="px-4 py-2 bg-gray-50 border-b">
                           <h3 className="font-medium text-sm text-gray-700">
