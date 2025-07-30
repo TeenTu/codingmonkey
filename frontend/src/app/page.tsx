@@ -33,6 +33,7 @@ import {
 import { api, type PortfolioItem, type PerformanceData, type AllProductsData, type ProductItem, type GameStatus } from "@/lib/api";
 import ProductDetail from "@/components/ProductDetail";
 import TradingOperation from "@/components/TradingOperation";
+import MonkeyAvatar from "@/components/MonkeyAvatar";
 
 export default function Home() {
   // 财经资讯相关状态
@@ -113,6 +114,10 @@ export default function Home() {
 
   // 产品类型筛选状态
   const [productFilter, setProductFilter] = useState<'all' | 'stocks' | 'funds'>('all');
+
+  // 猴子点击彩蛋状态
+  const [monkeyClicks, setMonkeyClicks] = useState(0);
+  const [showMonkeyMessage, setShowMonkeyMessage] = useState(false);
 
   // 检查是否需要显示模拟投资初始化弹窗
   useEffect(() => {
@@ -269,6 +274,24 @@ export default function Home() {
   // 交易完成后的回调
   const handleTradeComplete = () => {
     loadAllData();
+  };
+
+  // 猴子点击彩蛋
+  const handleMonkeyClick = () => {
+    const newClicks = monkeyClicks + 1;
+    setMonkeyClicks(newClicks);
+    
+    if (newClicks === 5) {
+      setShowMonkeyMessage(true);
+      setMessage({ 
+        type: 'success', 
+        text: '🎉 恭喜发现隐藏彩蛋！投资猴哥祝你财源滚滚！' 
+      });
+      setTimeout(() => {
+        setShowMonkeyMessage(false);
+        setMonkeyClicks(0);
+      }, 3000);
+    }
   };
 
   // 初始加载
@@ -458,7 +481,46 @@ export default function Home() {
           </div>
 
           {/* 用户状态显示 */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
+            {/* 猴子头像 */}
+            <div className="flex-shrink-0 relative group">
+              <div onClick={handleMonkeyClick}>
+                <MonkeyAvatar 
+                  size={100} 
+                  className={`animate-gentle-bounce hover:animate-float transition-all duration-300 cursor-pointer ${
+                    showMonkeyMessage ? 'animate-pulse' : ''
+                  }`}
+                  isProfitable={performance ? performance.totalGainLoss > 0 : false}
+                  isLosing={performance ? performance.totalGainLoss < 0 : false}
+                />
+              </div>
+              {/* 工具提示 */}
+              <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-10">
+                {showMonkeyMessage ? (
+                  `🎊 猴哥说：点击${5 - monkeyClicks}次解锁惊喜！`
+                ) : performance ? (
+                  performance.totalGainLoss > 0 ? (
+                    `猴哥笑哈哈！盈利¥${performance.totalGainLoss.toFixed(2)} 😄💰`
+                  ) : performance.totalGainLoss < 0 ? (
+                    `猴哥有点难过，但相信你能翻盘！😢💪`
+                  ) : (
+                    `猴哥表情平静，等待投资机会！�🎯`
+                  )
+                ) : (
+                  '投资猴哥为你保驾护航！🚀'
+                )}
+                {/* 小箭头 */}
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-800"></div>
+              </div>
+              
+              {/* 点击次数指示器 */}
+              {monkeyClicks > 0 && monkeyClicks < 5 && (
+                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-yellow-900 text-xs rounded-full px-2 py-1 font-bold animate-bounce">
+                  {monkeyClicks}/5
+                </div>
+              )}
+            </div>
+            
             <div className="text-right">
               <p className="text-sm text-gray-600">当前用户</p>
               <p className="font-semibold text-gray-900">用户 ID: {userId}</p>
