@@ -78,6 +78,17 @@ export interface BuyResult {
   };
 }
 
+export interface GameStatus {
+  user_id: number;
+  balance: number;
+  remain_days: number;
+  max_day: number;
+  is_game_over: boolean;
+  created_at: string;
+  updated_at: string;
+  user_name: string;
+}
+
 export interface PriceHistoryItem {
   day: number;
   date: string;
@@ -462,6 +473,28 @@ export const api = {
       return data.data[type];
     } catch (error) {
       console.error(`获取${type === 'stocks' ? '股票' : '基金'}列表失败:`, error);
+      throw error;
+    }
+  },
+
+  // 获取游戏状态
+  async getGameStatus(userId: string): Promise<GameStatus> {
+    try {
+      const response = await fetch(`${API_BASE}/gamestatus?user_id=${userId}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || '获取游戏状态失败');
+      }
+      
+      return data.data;
+    } catch (error) {
+      console.error('获取游戏状态失败:', error);
       throw error;
     }
   }

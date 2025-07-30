@@ -30,7 +30,7 @@ import {
   GamepadIcon,
   Search
 } from "lucide-react";
-import { api, type PortfolioItem, type PerformanceData, type AllProductsData, type ProductItem } from "@/lib/api";
+import { api, type PortfolioItem, type PerformanceData, type AllProductsData, type ProductItem, type GameStatus } from "@/lib/api";
 import ProductDetail from "@/components/ProductDetail";
 import TradingOperation from "@/components/TradingOperation";
 
@@ -41,6 +41,9 @@ export default function Home() {
   const [performance, setPerformance] = useState<PerformanceData | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // 游戏状态
+  const [gameStatus, setGameStatus] = useState<GameStatus | null>(null);
 
   // 模拟投资初始化相关状态
   const [showGameInitDialog, setShowGameInitDialog] = useState(false);
@@ -80,6 +83,7 @@ export default function Home() {
   useEffect(() => {
     setPortfolio([]);
     setPerformance(null);
+    setGameStatus(null);
     setMessage(null);
   }, [userId]);
 
@@ -152,9 +156,19 @@ export default function Home() {
     }
   };
 
+  // 加载游戏状态数据
+  const loadGameStatus = async () => {
+    try {
+      const data = await api.getGameStatus(userId);
+      setGameStatus(data);
+    } catch {
+      setMessage({ type: 'error', text: '加载游戏状态失败' });
+    }
+  };
+
   // 加载用户数据
   const loadUserData = async () => {
-    await Promise.all([loadPortfolio(), loadPerformance()]);
+    await Promise.all([loadPortfolio(), loadPerformance(), loadGameStatus()]);
   };
 
   // 加载所有数据（用户数据 + 产品数据）
@@ -403,6 +417,38 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* 游戏状态信息 */}
+        {gameStatus && (
+          <div className="mb-6 p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <p className="text-sm text-gray-600">当前余额</p>
+                <p className="text-xl font-bold text-green-600">
+                  ¥{Number(gameStatus.balance).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-gray-600">剩余天数</p>
+                <p className="text-xl font-bold text-blue-600">
+                  {gameStatus.remain_days} 天
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-gray-600">总模拟天数</p>
+                <p className="text-xl font-bold text-gray-600">
+                  {gameStatus.max_day} 天
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-gray-600">状态</p>
+                <p className={`text-xl font-bold ${gameStatus.is_game_over ? 'text-red-600' : 'text-green-600'}`}>
+                  {gameStatus.is_game_over ? '已结束' : '进行中'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 主要内容 - 添加网格布局 */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[calc(100vh-240px)]">
