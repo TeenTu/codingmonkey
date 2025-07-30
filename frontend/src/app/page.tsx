@@ -333,7 +333,7 @@ export default function Home() {
                     <tbody>
                       {portfolio.length > 0 ? (
                         portfolio.map((item: PortfolioItem) => (
-                          <tr key={item.holding_id} className="border-b hover:bg-gray-50">
+                            <tr key={`${item.product_code}-${item.holding_id}`} className="border-b hover:bg-gray-50">
                             <td className="p-2 font-medium">{item.product_name}</td>
                             <td className="p-2">{item.product_code || "-"}</td>
                             <td className="p-2">{item.product_type}</td>
