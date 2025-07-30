@@ -50,6 +50,9 @@ export default function Home() {
 
   // 推进天数相关状态
   const [advanceDayLoading, setAdvanceDayLoading] = useState(false);
+  
+  // 重置游戏相关状态
+  const [restartGameLoading, setRestartGameLoading] = useState(false);
 
   // 产品相关状态
   const [allProducts, setAllProducts] = useState<AllProductsData | null>(null);
@@ -220,6 +223,35 @@ export default function Home() {
     }
   };
 
+  // 重置游戏
+  const handleRestartGame = async () => {
+    if (!confirm('确定要重置游戏吗？这将清除所有持仓并重置产品库存，无法撤销！')) {
+      return;
+    }
+    
+    setRestartGameLoading(true);
+    
+    try {
+      const result = await api.restartGame(userId);
+      setMessage({ type: 'success', text: result.message });
+      
+      // 清除本地存储的初始化标记，重新显示初始化对话框
+      localStorage.removeItem(`game_initialized_user_${userId}`);
+      setShowGameInitDialog(true);
+      
+      // 清空当前数据
+      setPortfolio([]);
+      setPerformance(null);
+    } catch (error) {
+      setMessage({ 
+        type: 'error', 
+        text: error instanceof Error ? error.message : '重置游戏失败' 
+      });
+    } finally {
+      setRestartGameLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 模拟投资初始化弹窗 */}
@@ -334,6 +366,19 @@ export default function Home() {
                   <Loader2 className="h-3 w-3 animate-spin" />
                 ) : (
                   <RefreshCw className="h-3 w-3" />
+                )}
+              </Button>
+              <Button 
+                size="sm" 
+                variant="destructive"
+                onClick={handleRestartGame} 
+                disabled={restartGameLoading}
+                className="text-xs"
+              >
+                {restartGameLoading ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  '重置游戏'
                 )}
               </Button>
             </div>
