@@ -93,7 +93,7 @@ export default function Home() {
   // 推进天数相关状态
   const [advanceDayLoading, setAdvanceDayLoading] = useState(false);
   
-  // 重置游戏相关状态
+  // 重置模拟投资相关状态
   const [restartGameLoading, setRestartGameLoading] = useState(false);
 
   // 产品相关状态
@@ -296,9 +296,9 @@ export default function Home() {
     }
   };
 
-  // 重置游戏
+  // 重置模拟投资
   const handleRestartGame = async () => {
-    if (!confirm('确定要重置游戏吗？这将清除所有持仓并重置产品库存，无法撤销！')) {
+    if (!confirm('确定要重置模拟投资吗？这将清除所有持仓并重置产品库存，无法撤销！')) {
       return;
     }
     
@@ -318,7 +318,7 @@ export default function Home() {
     } catch (error) {
       setMessage({ 
         type: 'error', 
-        text: error instanceof Error ? error.message : '重置游戏失败' 
+        text: error instanceof Error ? error.message : '重置模拟投资失败' 
       });
     } finally {
       setRestartGameLoading(false);
@@ -482,7 +482,7 @@ export default function Home() {
                 {restartGameLoading ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
                 ) : (
-                  '重置游戏'
+                  '重置模拟投资'
                 )}
               </Button>
             </div>
