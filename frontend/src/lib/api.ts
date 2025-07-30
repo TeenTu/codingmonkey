@@ -376,6 +376,30 @@ export const api = {
     }
   },
 
+  // 重置游戏
+  async restartGame(userId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await fetch(`${API_BASE}/restartgame?user_id=${userId}`, {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || '重置游戏失败');
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('重置游戏失败:', error);
+      throw error;
+    }
+  },
+
   // 获取所有产品
   async getAllProducts(): Promise<AllProductsData> {
     try {

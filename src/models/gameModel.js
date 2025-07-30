@@ -20,14 +20,15 @@ const gameModel = {
             
             // 初始化或更新用户游戏状态
             await connection.execute(`
-                INSERT INTO user_game_status (user_id, balance, remain_days, is_game_over) 
-                VALUES (?, ?, ?, FALSE) 
+                INSERT INTO user_game_status (user_id, balance, remain_days, max_day, is_game_over) 
+                VALUES (?, ?, ?, ?, FALSE) 
                 ON DUPLICATE KEY UPDATE 
                 balance = VALUES(balance),
                 remain_days = VALUES(remain_days),
+                max_day = VALUES(max_day),
                 is_game_over = FALSE,
                 updated_at = CURRENT_TIMESTAMP
-            `, [userId, initialBalance, gameRemainDays]);
+            `, [userId, initialBalance, gameRemainDays, gameRemainDays]);
             
             await connection.commit();
             
@@ -35,6 +36,7 @@ const gameModel = {
                 userId,
                 initialBalance,
                 gameRemainDays,
+                maxDay: gameRemainDays,
                 message: 'Game initialization completed'
             };
             
@@ -55,7 +57,7 @@ const gameModel = {
             
             // 检查用户游戏状态
             const [gameStatus] = await connection.execute(
-                'SELECT balance, remain_days, is_game_over FROM user_game_status WHERE user_id = ?',
+                'SELECT balance, remain_days, max_day, is_game_over FROM user_game_status WHERE user_id = ?',
                 [userId]
             );
             
@@ -108,6 +110,7 @@ const gameModel = {
                     ugs.user_id,
                     ugs.balance,
                     ugs.remain_days,
+                    ugs.max_day,
                     ugs.is_game_over,
                     ugs.created_at,
                     ugs.updated_at,
@@ -228,6 +231,65 @@ const gameModel = {
         } catch (error) {
             await connection.rollback();
             throw new Error(`Error updating balance: ${error.message}`);
+        } finally {
+            connection.release();
+        }
+    },
+
+    // Restart game by resetting all data
+    restartGame: async (userId) => {
+        const connection = await db.getConnection();
+        
+        try {
+            await connection.beginTransaction();
+            
+            // 检查用户是否存在
+            const [userCheck] = await connection.execute(
+                'SELECT id FROM users WHERE id = ?',
+                [userId]
+            );
+            
+            if (userCheck.length === 0) {
+                throw new Error('User does not exist');
+            }
+            
+            // 删除用户持仓
+            await connection.execute(
+                'DELETE FROM holdings WHERE user_id = ?',
+                [userId]
+            );
+            
+            // 删除用户游戏状态
+            await connection.execute(
+                'DELETE FROM user_game_status WHERE user_id = ?',
+                [userId]
+            );
+            
+            // 重置所有产品库存到初始状态
+            // 股票产品 (1-30) 重置为 1000
+            await connection.execute(`
+                UPDATE product_quantity 
+                SET amount = 1000 
+                WHERE id BETWEEN 1 AND 30
+            `);
+            
+            // 基金产品 (31-45) 重置为 2000
+            await connection.execute(`
+                UPDATE product_quantity 
+                SET amount = 2000 
+                WHERE id BETWEEN 31 AND 45
+            `);
+            
+            await connection.commit();
+            
+            return {
+                userId,
+                message: 'Game restart completed successfully. All holdings cleared and product quantities reset.'
+            };
+            
+        } catch (error) {
+            await connection.rollback();
+            throw new Error(`Error restarting game: ${error.message}`);
         } finally {
             connection.release();
         }

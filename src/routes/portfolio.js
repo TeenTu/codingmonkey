@@ -38,6 +38,9 @@ router.post('/gameinit', gameController.initializeGame);
 // Advance day route
 router.get('/advanceday', gameController.advanceDay);
 
+// Restart game route
+router.post('/restartgame', gameController.restartGame);
+
 // Get user balance
 router.get('/getbalance', gameController.getUserBalance);
 // Update user balance

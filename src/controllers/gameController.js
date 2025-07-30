@@ -162,6 +162,52 @@ const gameController = {
         } catch (error) {
             throw new Error(`Failed to update user balance: ${error.message}`);
         }
+    },
+
+    // Restart game for a user
+    restartGame: async (req, res) => {
+        try {
+            // get userId from param, if not param use default user
+            const userId = req.query.user_id || 1;
+            
+            if (!userId) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'User ID is required' 
+                });
+            }
+
+            const result = await gameModel.restartGame(userId);
+            
+            res.json({
+                success: true,
+                message: result.message,
+                data: result
+            });
+        } catch (error) {
+            console.error('Restart game error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to restart game',
+                error: error.message
+            });
+        }
+    },
+
+    // Internal function for restarting game (for use by other modules)
+    _restartGame: async (userId) => {
+        try {
+            // Data validation
+            if (!userId || !Number.isInteger(Number(userId)) || Number(userId) <= 0) {
+                throw new Error('Invalid user ID: must be a positive integer');
+            }
+
+            const result = await gameModel.restartGame(userId);
+            
+            return result;
+        } catch (error) {
+            throw new Error(`Failed to restart game: ${error.message}`);
+        }
     }
 };
 

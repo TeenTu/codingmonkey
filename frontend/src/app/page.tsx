@@ -89,6 +89,9 @@ export default function Home() {
 
   // 推进天数相关状态
   const [advanceDayLoading, setAdvanceDayLoading] = useState(false);
+  
+  // 重置游戏相关状态
+  const [restartGameLoading, setRestartGameLoading] = useState(false);
 
   // 产品相关状态
   const [allProducts, setAllProducts] = useState<AllProductsData | null>(null);
@@ -98,6 +101,9 @@ export default function Home() {
   // 产品详情页面状态
   const [showProductDetail, setShowProductDetail] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string>("");
+
+  // 产品类型筛选状态
+  const [productFilter, setProductFilter] = useState<'all' | 'stocks' | 'funds'>('all');
 
   // 检查是否需要显示模拟投资初始化弹窗
   useEffect(() => {
@@ -215,6 +221,25 @@ export default function Home() {
     setShowProductDetail(true);
   };
 
+  // 根据产品名称查找产品信息并跳转到详情页
+  const handleProductNameClick = (productName: string) => {
+    if (!allProducts) return;
+    
+    // 在股票中查找
+    const stock = allProducts.stocks.find(stock => stock.name === productName);
+    if (stock) {
+      handleProductClick(stock);
+      return;
+    }
+    
+    // 在基金中查找
+    const fund = allProducts.funds.find(fund => fund.name === productName);
+    if (fund) {
+      handleProductClick(fund);
+      return;
+    }
+  };
+
   // 返回产品列表
   const handleBackToProductList = () => {
     setShowProductDetail(false);
@@ -254,6 +279,35 @@ export default function Home() {
       });
     } finally {
       setAdvanceDayLoading(false);
+    }
+  };
+
+  // 重置游戏
+  const handleRestartGame = async () => {
+    if (!confirm('确定要重置游戏吗？这将清除所有持仓并重置产品库存，无法撤销！')) {
+      return;
+    }
+    
+    setRestartGameLoading(true);
+    
+    try {
+      const result = await api.restartGame(userId);
+      setMessage({ type: 'success', text: result.message });
+      
+      // 清除本地存储的初始化标记，重新显示初始化对话框
+      localStorage.removeItem(`game_initialized_user_${userId}`);
+      setShowGameInitDialog(true);
+      
+      // 清空当前数据
+      setPortfolio([]);
+      setPerformance(null);
+    } catch (error) {
+      setMessage({ 
+        type: 'error', 
+        text: error instanceof Error ? error.message : '重置游戏失败' 
+      });
+    } finally {
+      setRestartGameLoading(false);
     }
   };
 
@@ -404,15 +458,28 @@ export default function Home() {
                   <RefreshCw className="h-3 w-3" />
                 )}
               </Button>
+              <Button 
+                size="sm" 
+                variant="destructive"
+                onClick={handleRestartGame} 
+                disabled={restartGameLoading}
+                className="text-xs"
+              >
+                {restartGameLoading ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  '重置游戏'
+                )}
+              </Button>
             </div>
           </div>
         </div>
 
         {/* 主要内容 - 添加网格布局 */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[calc(100vh-240px)]">
           {/* 左侧边栏 - 产品列表 */}
           <div className="lg:col-span-1">
-            <Card className="h-fit sticky top-4">
+            <Card className="max-h-[80vh] flex flex-col overflow-hidden">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Search className="h-5 w-5" />
@@ -421,17 +488,44 @@ export default function Home() {
                 <CardDescription>
                   浏览所有可投资的股票和基金
                 </CardDescription>
+                {/* 产品类型筛选按钮 */}
+                <div className="flex gap-1 mt-2">
+                  <Button
+                    size="sm"
+                    variant={productFilter === 'all' ? 'default' : 'outline'}
+                    onClick={() => setProductFilter('all')}
+                    className="text-xs px-2 py-1"
+                  >
+                    全部
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={productFilter === 'stocks' ? 'default' : 'outline'}
+                    onClick={() => setProductFilter('stocks')}
+                    className="text-xs px-2 py-1"
+                  >
+                    股票
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={productFilter === 'funds' ? 'default' : 'outline'}
+                    onClick={() => setProductFilter('funds')}
+                    className="text-xs px-2 py-1"
+                  >
+                    基金
+                  </Button>
+                </div>
               </CardHeader>
-              <CardContent className="p-0">
+              <CardContent className="p-0 flex-1 flex flex-col min-h-0">
                 {productsLoading ? (
                   <div className="p-6 text-center">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
                     <p className="text-sm text-gray-500">加载产品中...</p>
                   </div>
                 ) : allProducts ? (
-                  <div className="max-h-96 overflow-y-auto">
+                  <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                     {/* 股票部分 */}
-                    {allProducts.stocks.length > 0 && (
+                    {(productFilter === 'all' || productFilter === 'stocks') && allProducts.stocks.length > 0 && (
                       <div>
                         <div className="px-4 py-2 bg-gray-50 border-b">
                           <h3 className="font-medium text-sm text-gray-700">
@@ -469,7 +563,7 @@ export default function Home() {
                     )}
                     
                     {/* 基金部分 */}
-                    {allProducts.funds.length > 0 && (
+                    {(productFilter === 'all' || productFilter === 'funds') && allProducts.funds.length > 0 && (
                       <div>
                         <div className="px-4 py-2 bg-gray-50 border-b">
                           <h3 className="font-medium text-sm text-gray-700">
@@ -697,7 +791,12 @@ export default function Home() {
                       <tbody>
                                                  {performance?.holdings.map((item: PortfolioItem) => (
                           <tr key={item.id} className="border-b hover:bg-gray-50">
-                            <td className="p-2 font-medium">{item.product_name}</td>
+                            <td 
+                              className="p-2 font-medium cursor-pointer hover:text-blue-600 hover:underline"
+                              onClick={() => handleProductNameClick(item.product_name)}
+                            >
+                              {item.product_name}
+                            </td>
                             <td className="p-2">¥{item.buy_price.toFixed(2)}</td>
                             <td className="p-2">¥{item.current_price.toFixed(2)}</td>
                             <td className="p-2">{item.quantity}</td>
@@ -723,7 +822,7 @@ export default function Home() {
           <TabsContent value="action">
             <TradingOperation 
               userId={userId} 
-              selectedProduct={selectedProduct} 
+              selectedProduct={null} 
               onTradeComplete={handleTradeComplete} 
             />
           </TabsContent>
