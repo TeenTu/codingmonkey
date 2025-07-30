@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { api, type ProductDetailData, type BuyResult } from '@/lib/api';
+import { api, type ProductDetailData, type BuyResult, type SellResult } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,9 @@ export default function ProductDetail({ productId, userId, onBack }: ProductDeta
   const [buyAmount, setBuyAmount] = useState("");
   const [buyLoading, setBuyLoading] = useState(false);
   const [buyResult, setBuyResult] = useState<BuyResult | null>(null);
+  const [sellAmount, setSellAmount] = useState("");
+  const [sellLoading, setSellLoading] = useState(false);
+  const [sellResult, setSellResult] = useState<SellResult | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // 加载产品详情
@@ -93,6 +96,53 @@ export default function ProductDetail({ productId, userId, onBack }: ProductDeta
       setMessage({ type: 'error', text: error instanceof Error ? error.message : '买入失败，请重试' });
     } finally {
       setBuyLoading(false);
+    }
+  };
+
+  const handleSell = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!sellAmount || parseInt(sellAmount) <= 0) {
+      setMessage({ type: 'error', text: '请输入有效的卖出数量' });
+      return;
+    }
+
+    if (!productDetail) {
+      setMessage({ type: 'error', text: '产品信息加载中，请稍后' });
+      return;
+    }
+
+    const amount = parseInt(sellAmount);
+    const totalValue = amount * productDetail.current_price;
+
+    if (!confirm(`确定要卖出 ${amount} 个单位的 ${productDetail.name} 吗？\n预计收入: ¥${totalValue.toFixed(2)}`)) {
+      return;
+    }
+
+    try {
+      setSellLoading(true);
+      setSellResult(null);
+      setMessage(null);
+
+      const result = await api.sellProduct(productId, userId, amount);
+      
+      console.log('Sell result:', result);
+      
+      setSellResult(result);
+      
+      if (result.success) {
+        setMessage({ type: 'success', text: result.message });
+        setSellAmount("");
+        // 重新加载产品详情以更新库存
+        await loadProductDetail();
+      } else {
+        setMessage({ type: 'error', text: result.message });
+      }
+    } catch (error: unknown) {
+      console.error('卖出失败:', error);
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : '卖出失败，请重试' });
+    } finally {
+      setSellLoading(false);
     }
   };
 
@@ -260,59 +310,113 @@ export default function ProductDetail({ productId, userId, onBack }: ProductDeta
         </CardContent>
       </Card>
 
-      {/* 买入操作 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>买入操作</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleBuy} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="buyAmount">购买数量</Label>
-                <Input
-                  id="buyAmount"
-                  type="number"
-                  min="1"
-                  max={productDetail.available_quantity}
-                  value={buyAmount}
-                  onChange={(e) => setBuyAmount(e.target.value)}
-                  placeholder="输入购买数量"
-                  disabled={buyLoading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>预计总金额</Label>
-                <div className="p-2 border rounded-md bg-gray-50">
-                  ¥{buyAmount ? (parseInt(buyAmount) * productDetail.current_price).toFixed(2) : '0.00'}
+      {/* 交易操作 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* 买入操作 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-green-600">买入操作</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleBuy} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="buyAmount">购买数量</Label>
+                  <Input
+                    id="buyAmount"
+                    type="number"
+                    min="1"
+                    max={productDetail.available_quantity}
+                    value={buyAmount}
+                    onChange={(e) => setBuyAmount(e.target.value)}
+                    placeholder="输入购买数量"
+                    disabled={buyLoading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>预计总金额</Label>
+                  <div className="p-2 border rounded-md bg-gray-50">
+                    ¥{buyAmount ? (parseInt(buyAmount) * productDetail.current_price).toFixed(2) : '0.00'}
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <Button 
-              type="submit" 
-              disabled={buyLoading || !buyAmount || parseInt(buyAmount) <= 0 || parseInt(buyAmount) > productDetail.available_quantity}
-              className="w-full"
-            >
-              {buyLoading ? '购买中...' : '立即购买'}
-            </Button>
-          </form>
+              
+              <Button 
+                type="submit" 
+                disabled={buyLoading || !buyAmount || parseInt(buyAmount) <= 0 || parseInt(buyAmount) > productDetail.available_quantity}
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                {buyLoading ? '购买中...' : '立即购买'}
+              </Button>
+            </form>
 
-          {/* 买入结果 */}
-          {buyResult && buyResult.success && buyResult.data && (
-            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <h4 className="font-semibold text-green-800 mb-2">购买成功！</h4>
-              <div className="text-sm text-green-700 space-y-1">
-                <p>持仓ID: {buyResult.data.holdingId}</p>
-                <p>购买价格: ¥{formatCurrency(buyResult.data.buyPrice)}</p>
-                <p>当前持仓数量: {buyResult.data.currentHoldingAmount}</p>
-                <p>本次花费: ¥{formatCurrency(buyResult.data.totalCost)}</p>
-                <p>剩余可买数量: {buyResult.data.remainingQuantity}</p>
+            {/* 买入结果 */}
+            {buyResult && buyResult.success && buyResult.data && (
+              <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <h4 className="font-semibold text-green-800 mb-2">购买成功！</h4>
+                <div className="text-sm text-green-700 space-y-1">
+                  <p>持仓ID: {buyResult.data.holdingId}</p>
+                  <p>购买价格: ¥{formatCurrency(buyResult.data.buyPrice)}</p>
+                  <p>当前持仓数量: {buyResult.data.currentHoldingAmount}</p>
+                  <p>本次花费: ¥{formatCurrency(buyResult.data.totalCost)}</p>
+                  <p>剩余可买数量: {buyResult.data.remainingQuantity}</p>
+                </div>
               </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* 卖出操作 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-red-600">卖出操作</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSell} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sellAmount">卖出数量</Label>
+                  <Input
+                    id="sellAmount"
+                    type="number"
+                    min="1"
+                    value={sellAmount}
+                    onChange={(e) => setSellAmount(e.target.value)}
+                    placeholder="输入卖出数量"
+                    disabled={sellLoading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>预计收入</Label>
+                  <div className="p-2 border rounded-md bg-gray-50">
+                    ¥{sellAmount ? (parseInt(sellAmount) * productDetail.current_price).toFixed(2) : '0.00'}
+                  </div>
+                </div>
+              </div>
+              
+              <Button 
+                type="submit" 
+                disabled={sellLoading || !sellAmount || parseInt(sellAmount) <= 0}
+                className="w-full bg-red-600 hover:bg-red-700"
+              >
+                {sellLoading ? '卖出中...' : '立即卖出'}
+              </Button>
+            </form>
+
+            {/* 卖出结果 */}
+            {sellResult && sellResult.success && sellResult.data && (
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="font-semibold text-blue-800 mb-2">卖出成功！</h4>
+                <div className="text-sm text-blue-700 space-y-1">
+                  <p>卖出数量: {sellResult.data.sold_amount}</p>
+                  <p>总盈亏: ¥{formatCurrency(sellResult.data.profit_summary.total_profit)}</p>
+                  <p>盈亏率: {Number(sellResult.data.profit_summary.total_profit_percentage).toFixed(2)}%</p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
