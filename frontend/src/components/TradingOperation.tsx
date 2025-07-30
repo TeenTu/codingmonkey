@@ -23,16 +23,29 @@ export default function TradingOperation({ userId, selectedProduct, onTradeCompl
   const [buyResult, setBuyResult] = useState<BuyResult | null>(null);
   const [sellResult, setSellResult] = useState<SellResult | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isFromProductList, setIsFromProductList] = useState(false);
+  const [manualProductId, setManualProductId] = useState(""); // 手动输入的产品ID
 
-  // 当选择的产品改变时，自动填充产品ID
+
+  // 当选择的产品改变时，仅在从产品列表选择时设置
   React.useEffect(() => {
     if (selectedProduct) {
-      setMessage({
-        type: 'success', 
-        text: `已选择产品: ${selectedProduct.name} (ID: ${selectedProduct.id})`
-      });      setProductId(selectedProduct.id.toString());
+      setIsFromProductList(true);
+      setProductId(selectedProduct.id.toString());
+      setManualProductId(""); // 清空手动输入
     }
   }, [selectedProduct]);
+
+  // 手动输入产品ID时的处理
+  const handleManualProductIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setManualProductId(value);
+    setProductId(value);
+    // 如果手动输入了产品ID，切换到手动模式
+    if (value) {
+      setIsFromProductList(false);
+    }
+  };
 
   const handleBuy = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,6 +128,13 @@ export default function TradingOperation({ userId, selectedProduct, onTradeCompl
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {/* 模式提示 */}
+            <div className="mb-4 p-2 bg-gray-50 rounded-lg">
+              <p className="text-xs text-gray-600">
+                {isFromProductList ? "🔄 产品列表模式" : "✏️ 手动输入模式"}
+              </p>
+            </div>
+
             {/* 选择交易类型 */}
             <div className="flex mb-4">
               <Button
@@ -133,14 +153,30 @@ export default function TradingOperation({ userId, selectedProduct, onTradeCompl
               </Button>
             </div>
 
-            {/* 选中产品显示 */}
-            {selectedProduct && (
+            {/* 选中产品显示 - 仅当从产品列表选择时显示 */}
+            {isFromProductList && selectedProduct && (
               <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="text-sm text-blue-800">
-                  <p className="font-semibold">已选择产品: {selectedProduct.name}</p>
-                  <p>代码: {selectedProduct.code}</p>
-                  <p>当前价格: ¥{selectedProduct.current_price.toFixed(2)}</p>
-                  <p>可买数量: {selectedProduct.available_quantity}</p>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-semibold">已选择产品: {selectedProduct.name}</p>
+                      <p>代码: {selectedProduct.code}</p>
+                      <p>当前价格: ¥{selectedProduct.current_price.toFixed(2)}</p>
+                      <p>可买数量: {selectedProduct.available_quantity}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsFromProductList(false);
+                        setProductId("");
+                        setManualProductId(""); // 清空手动输入
+                      }}
+                      className="text-xs"
+                    >
+                      清除选择
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
@@ -151,10 +187,11 @@ export default function TradingOperation({ userId, selectedProduct, onTradeCompl
                 <Input
                   id="productId"
                   type="number"
-                  value={productId}
-                  onChange={(e) => setProductId(e.target.value)}
-                  placeholder="输入产品ID或从左侧选择产品"
+                  value={manualProductId} // 使用 manualProductId
+                  onChange={handleManualProductIdChange}
+                  placeholder={isFromProductList ? "已从产品列表选择" : "输入产品ID"}
                   required
+                  disabled={isFromProductList}
                 />
               </div>
               <div>
@@ -169,14 +206,23 @@ export default function TradingOperation({ userId, selectedProduct, onTradeCompl
                   min="1"
                 />
               </div>
-              {/* 预计金额显示 */}
-              {selectedProduct && amount && (
+              {/* 预计金额显示 - 仅当从产品列表选择时显示 */}
+              {isFromProductList && selectedProduct && amount && (
                 <div className="p-3 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-600">
                     预计{actionType === 'sell' ? '收入' : '花费'}: 
                     <span className="font-semibold ml-1">
                       ¥{(Number(amount) * selectedProduct.current_price).toFixed(2)}
                     </span>
+                  </p>
+                </div>
+              )}
+              
+              {/* 手动模式下的提示 */}
+              {!isFromProductList && amount && (
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    手动模式：请确保产品ID正确
                   </p>
                 </div>
               )}

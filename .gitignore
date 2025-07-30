@@ -1,2 +1,3 @@
 node_modules/
 src/config/dbs_pwd.js
+src/config/db.js

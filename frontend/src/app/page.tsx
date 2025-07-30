@@ -176,6 +176,25 @@ export default function Home() {
     setShowProductDetail(true);
   };
 
+  // 根据产品名称查找产品信息并跳转到详情页
+  const handleProductNameClick = (productName: string) => {
+    if (!allProducts) return;
+    
+    // 在股票中查找
+    const stock = allProducts.stocks.find(stock => stock.name === productName);
+    if (stock) {
+      handleProductClick(stock);
+      return;
+    }
+    
+    // 在基金中查找
+    const fund = allProducts.funds.find(fund => fund.name === productName);
+    if (fund) {
+      handleProductClick(fund);
+      return;
+    }
+  };
+
   // 返回产品列表
   const handleBackToProductList = () => {
     setShowProductDetail(false);
@@ -622,7 +641,12 @@ export default function Home() {
                       <tbody>
                                                  {performance?.holdings.map((item: PortfolioItem) => (
                           <tr key={item.id} className="border-b hover:bg-gray-50">
-                            <td className="p-2 font-medium">{item.product_name}</td>
+                            <td 
+                              className="p-2 font-medium cursor-pointer hover:text-blue-600 hover:underline"
+                              onClick={() => handleProductNameClick(item.product_name)}
+                            >
+                              {item.product_name}
+                            </td>
                             <td className="p-2">¥{item.buy_price.toFixed(2)}</td>
                             <td className="p-2">¥{item.current_price.toFixed(2)}</td>
                             <td className="p-2">{item.quantity}</td>
@@ -648,7 +672,7 @@ export default function Home() {
           <TabsContent value="action">
             <TradingOperation 
               userId={userId} 
-              selectedProduct={selectedProduct} 
+              selectedProduct={null} 
               onTradeComplete={handleTradeComplete} 
             />
           </TabsContent>
