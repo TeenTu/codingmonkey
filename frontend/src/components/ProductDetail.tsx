@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, TrendingUp, TrendingDown } from 'lucide-react';
+// @ts-ignore
+import confetti from 'canvas-confetti';
 
 interface ProductDetailProps {
   productId: string;
@@ -138,6 +140,12 @@ export default function ProductDetail({ productId, userId, onBack, onTradeComple
       if (result.success) {
         setMessage({ type: 'success', text: result.message });
         setSellAmount("");
+        
+        // 检查是否有盈利，如果有则触发庆祝效果
+        if (result.data && result.data.profit_summary && result.data.profit_summary.total_profit >= 0) {
+          triggerCelebration();
+        }
+        
         // 重新加载产品详情以更新库存
         await loadProductDetail();
         // 通知父组件刷新数据
@@ -153,6 +161,59 @@ export default function ProductDetail({ productId, userId, onBack, onTradeComple
     } finally {
       setSellLoading(false);
     }
+  };
+
+  // 触发庆祝效果
+  const triggerCelebration = () => {
+    // 主要礼花效果 - 从屏幕中央爆发
+    confetti({
+      particleCount: 150,
+      spread: 90,
+      origin: { y: 0.6 },
+      colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#ff69b4']
+    });
+
+    // 左侧礼花
+    setTimeout(() => {
+      confetti({
+        particleCount: 50,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0, y: 0.7 },
+        colors: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57']
+      });
+    }, 200);
+
+    // 右侧礼花
+    setTimeout(() => {
+      confetti({
+        particleCount: 50,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1, y: 0.7 },
+        colors: ['#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3', '#ff9f43']
+      });
+    }, 400);
+
+    // 顶部礼花
+    setTimeout(() => {
+      confetti({
+        particleCount: 30,
+        spread: 360,
+        origin: { x: 0.5, y: 0 },
+        colors: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57']
+      });
+    }, 600);
+
+    // 底部礼花
+    setTimeout(() => {
+      confetti({
+        particleCount: 40,
+        spread: 360,
+        origin: { x: 0.5, y: 1 },
+        colors: ['#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3', '#ff9f43']
+      });
+    }, 800);
   };
 
   if (loading) {
@@ -414,12 +475,44 @@ export default function ProductDetail({ productId, userId, onBack, onTradeComple
 
             {/* 卖出结果 */}
             {sellResult && sellResult.success && sellResult.data && (
-              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h4 className="font-semibold text-blue-800 mb-2">卖出成功！</h4>
-                <div className="text-sm text-blue-700 space-y-1">
-                  <p>卖出数量: {sellResult.data.sold_amount}</p>
-                  <p>总盈亏: ¥{formatCurrency(sellResult.data.profit_summary.total_profit)}</p>
-                  <p>盈亏率: {Number(sellResult.data.profit_summary.total_profit_percentage).toFixed(2)}%</p>
+              <div className={`mt-4 p-4 border rounded-lg ${
+                Number(sellResult.data.profit_summary.total_profit) >= 0 
+                  ? 'bg-gradient-to-r from-green-50 to-yellow-50 border-green-200' 
+                  : 'bg-red-50 border-red-200'
+              }`}>
+                <div className="flex items-center gap-2 mb-2">
+                  {Number(sellResult.data.profit_summary.total_profit) >= 0 ? (
+                    <>
+                      <span className="text-2xl">🎉</span>
+                      <span className="font-semibold text-green-800">盈利成功！</span>
+                    </>
+                  ) : (
+                    <span className="font-semibold text-red-800">卖出完成</span>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>卖出数量:</span>
+                    <span className="font-medium">{sellResult.data.sold_amount}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>总盈亏:</span>
+                    <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {Number(sellResult.data.profit_summary.total_profit) >= 0 ? '+' : ''}¥{Number(sellResult.data.profit_summary.total_profit).toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>盈亏率:</span>
+                    <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit_percentage) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {Number(sellResult.data.profit_summary.total_profit_percentage) >= 0 ? '+' : ''}{Number(sellResult.data.profit_summary.total_profit_percentage).toFixed(2)}%
+                    </span>
+                  </div>
+                  {Number(sellResult.data.profit_summary.total_profit) >= 0 && (
+                    <div className="flex items-center gap-1 mt-2 text-yellow-600">
+                      <span className="text-lg">🎊</span>
+                      <span className="text-xs">恭喜盈利！</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
