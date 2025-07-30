@@ -91,6 +91,12 @@ const sellModel = {
                 SET amount = amount + ? 
                 WHERE id = ?
             `, [sellAmount, productId]);
+            // 将收益添加到user_game_status表的余额中
+            await connection.query(`
+                UPDATE user_game_status 
+                SET balance = balance + ? 
+                WHERE user_id = ?
+            `, [totalProfit, userId]);
 
             if (remainingSellAmount > 0) {
                 throw new Error(`可卖出数量不足，还需要 ${remainingSellAmount} 单位`);
