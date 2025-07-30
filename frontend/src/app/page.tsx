@@ -70,8 +70,11 @@ export default function Home() {
   const [showProductDetail, setShowProductDetail] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string>("");
 
-  // toggle button for the donut chat of asset allocation
+  // Pie Charts
   const [showChart, setShowChart] = useState(false);
+  // —— 控制中心文字是否显示 —— //
+  const [hoverUnits, setHoverUnits] = useState(false);
+  const [hoverCost, setHoverCost] = useState(false);
 
   // 检查是否需要显示模拟投资初始化弹窗
   useEffect(() => {
@@ -569,6 +572,8 @@ export default function Home() {
                               outerRadius={100}
                               label={renderPercentLabel}
                               labelLine
+                              onMouseEnter={() => setHoverUnits(true)}
+                              onMouseLeave={() => setHoverUnits(false)}
                             >
                               {chartDataUnits.map((entry, index) => (
                                 <Cell
@@ -585,8 +590,12 @@ export default function Home() {
                           </PieChart>
                         </ResponsiveContainer>
 
-                        {/* 中心文字 */}
-                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        {/* 中心文字 —— 悬停时隐藏 */}
+                        <div
+                          className={`absolute inset-0 flex flex-col items-center justify-center pointer-events-none ${
+                            hoverUnits ? "hidden" : ""
+                          }`}
+                        >
                           <p className="text-xl font-extrabold tracking-wide text-gray-700">
                             UNITS
                           </p>
@@ -612,6 +621,8 @@ export default function Home() {
                               outerRadius={100}
                               label={renderPercentLabel}
                               labelLine
+                              onMouseEnter={() => setHoverCost(true)}
+                              onMouseLeave={() => setHoverCost(false)}
                             >
                               {chartData.map((entry, index) => (
                                 <Cell
@@ -629,7 +640,11 @@ export default function Home() {
                         </ResponsiveContainer>
 
                         {/* 中心文字 */}
-                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <div
+                          className={`absolute inset-0 flex flex-col items-center justify-center pointer-events-none ${
+                            hoverCost ? "hidden" : ""
+                          }`}
+                        >
                           <p className="text-xl font-extrabold tracking-wide text-gray-700">
                             SPENDING
                           </p>
