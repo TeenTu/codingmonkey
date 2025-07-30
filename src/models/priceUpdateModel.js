@@ -3,20 +3,121 @@ const db = require('../config/db');
 
 const priceCache = require('../tools/priceCache');
 
-// 保存当前更新到第几天
-let currentDay = 0;
-//TODO init with gameinit
-const MAX_DAYS = 30;
+// 注释掉固定的变量，改为从数据库读取
+// let currentDay = 0;
+// const MAX_DAYS = 30;
 
 
 const Price = {
 
-    // 添加currentDay相关方法
-    getCurrentDay: () => currentDay,
-
-    updateAllPrices: async () => {
+    // 从数据库获取游戏状态
+    getGameStatusFromDB: async (userId = 1) => {
         try {
-            if (currentDay >= MAX_DAYS) {
+            const [gameStatus] = await db.query(
+                'SELECT max_day, remain_days, is_game_over FROM user_game_status WHERE user_id = ?',
+                [userId]
+            );
+            
+            if (gameStatus.length === 0) {
+                throw new Error('User game status not found');
+            }
+            
+            const status = gameStatus[0];
+            const MAX_DAYS = status.max_day;
+            const currentDay = MAX_DAYS - status.remain_days + 1;
+            
+            return {
+                MAX_DAYS,
+                currentDay,
+                remainDays: status.remain_days,
+                isGameOver: status.is_game_over
+            };
+        } catch (error) {
+            throw new Error(`Error getting game status: ${error.message}`);
+        }
+    },
+
+    // 更新用户游戏状态中的剩余天数
+    updateUserGameStatus: async (userId = 1) => {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+            
+            // 获取当前状态
+            const [gameStatus] = await connection.execute(
+                'SELECT remain_days, is_game_over FROM user_game_status WHERE user_id = ?',
+                [userId]
+            );
+            
+            if (gameStatus.length === 0) {
+                throw new Error('User game status not found');
+            }
+            
+            const currentStatus = gameStatus[0];
+            
+            if (currentStatus.is_game_over) {
+                throw new Error('Game is already over');
+            }
+            
+            if (currentStatus.remain_days <= 0) {
+                throw new Error('No remaining days');
+            }
+            
+            // 减少剩余天数
+            const newRemainDays = currentStatus.remain_days - 1;
+            const isGameOver = newRemainDays <= 0;
+            
+            await connection.execute(`
+                UPDATE user_game_status 
+                SET remain_days = ?, is_game_over = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE user_id = ?
+            `, [newRemainDays, isGameOver, userId]);
+            
+            await connection.commit();
+            
+            return {
+                remainDays: newRemainDays,
+                isGameOver,
+                message: isGameOver ? 'Game finished!' : 'Day advanced successfully'
+            };
+            
+        } catch (error) {
+            await connection.rollback();
+            throw new Error(`Error updating user game status: ${error.message}`);
+        } finally {
+            connection.release();
+        }
+    },
+
+    // 修改getCurrentDay方法，从数据库读取
+    getCurrentDay: async (userId = 1) => {
+        const gameStatus = await Price.getGameStatusFromDB(userId);
+        return gameStatus.currentDay;
+    },
+
+    updateAllPrices: async (userId = 1) => {
+        try {
+            // 从数据库获取游戏状态
+            const gameStatus = await Price.getGameStatusFromDB(userId);
+            const { MAX_DAYS, currentDay, remainDays, isGameOver } = gameStatus;
+            
+            // 检查游戏是否已结束
+            if (isGameOver) {
+                return {
+                    success: false,
+                    message: '游戏已结束，无法继续更新价格'
+                };
+            }
+            
+            // 检查是否还有剩余天数
+            if (remainDays <= 0) {
+                return {
+                    success: false,
+                    message: '没有剩余天数，无法继续更新价格'
+                };
+            }
+            
+            if (currentDay > MAX_DAYS) {
                 return {
                     success: false,
                     message: `已经更新了${MAX_DAYS}天的数据，无法继续更新`
@@ -42,13 +143,13 @@ const Price = {
             }
             const allDates = Array.from(allDatesSet).sort();
 
-            if (currentDay >= allDates.length) {
+            if (currentDay > allDates.length) {
                 return {
                     success: false,
                     message: `CSV文件日期不足，已无可更新天数`
                 };
             }
-            const targetDate = allDates[currentDay];
+            const targetDate = allDates[currentDay - 1]; // currentDay从1开始，数组从0开始
 
             // 读取 cash 上次价格
             let cashLastPrice = null;
@@ -94,12 +195,15 @@ const Price = {
                 }
             }
 
-            currentDay++;
+            // 更新用户游戏状态（剩余天数减1）
+            const updateResult = await Price.updateUserGameStatus(userId);
+
             return {
                 success: true,
                 message: `成功更新第 ${currentDay} 天（${targetDate}）的价格数据`,
                 currentDay: currentDay,
-                remainingDays: Math.max(0, Math.min(MAX_DAYS, allDates.length) - currentDay),
+                remainingDays: updateResult.remainDays,
+                isGameOver: updateResult.isGameOver,
                 date: targetDate
             };
         } catch (error) {
@@ -108,22 +212,35 @@ const Price = {
     },
 
 
-    // 获取当前更新状态
-    getUpdateStatus: () => {
-        return {
-            currentDay,
-            maxDays: MAX_DAYS,
-            remainingDays: MAX_DAYS - currentDay,
-            canUpdate: currentDay < MAX_DAYS
-        };
+    // 获取当前更新状态 - 从数据库读取
+    getUpdateStatus: async (userId = 1) => {
+        try {
+            const gameStatus = await Price.getGameStatusFromDB(userId);
+            return {
+                currentDay: gameStatus.currentDay,
+                maxDays: gameStatus.MAX_DAYS,
+                remainingDays: gameStatus.remainDays,
+                canUpdate: gameStatus.remainDays > 0 && !gameStatus.isGameOver,
+                isGameOver: gameStatus.isGameOver
+            };
+        } catch (error) {
+            // 如果获取失败，返回默认值
+            return {
+                currentDay: 0,
+                maxDays: 0,
+                remainingDays: 0,
+                canUpdate: false,
+                isGameOver: true,
+                error: error.message
+            };
+        }
     },
 
-    // 重置天数（当服务器重启时会自动重置）
+    // 重置天数现在不需要了，因为通过游戏重置来处理
     resetDays: () => {
-        currentDay = 0;
         return {
             success: true,
-            message: '已重置更新天数'
+            message: '天数重置请使用游戏重置功能'
         };
     }
 };
