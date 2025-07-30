@@ -108,6 +108,73 @@ export interface ProductDetailData {
   historical_prices: PriceHistoryItem[];
 }
 
+export interface TotalAssetsData {
+  userId: number;
+  totalAssets: number;
+  balance: number;
+  portfolioValue: number;
+  timestamp: number;
+  date: string;
+}
+
+export interface AssetsHistoryData {
+  userId: number;
+  history: Array<{
+    date: string;
+    timestamp: number;
+    totalAssets: number;
+    balance: number;
+    portfolioValue: number;
+    day: number;
+    estimated?: boolean; // 标记是否为估算数据
+  }>;
+  count: number;
+  currentDay?: number;
+  maxDay?: number;
+}
+
+export interface ProductContribution {
+  productId: number;
+  productName: string;
+  totalProfit?: number;
+  totalProfitPercentage?: number;
+  unrealizedProfit?: number;
+  unrealizedProfitPercentage?: number;
+  currentValue?: number;
+  cost?: number;
+  quantity?: number;
+  currentPrice?: number;
+  buyPrice?: number;
+  transactions?: Array<{
+    date: string;
+    timestamp: number;
+    profit: number;
+    profitPercentage: number;
+    sellPrice: number;
+    sellAmount: number;
+    originalCost: number;
+  }>;
+}
+
+export interface ProductContributionsData {
+  userId: number;
+  summary: {
+    totalRealizedProfit: number;
+    totalUnrealizedProfit: number;
+    totalProfit: number;
+    totalProfitPercentage: number;
+    realizedCount: number;
+    unrealizedCount: number;
+    historyDays: number;
+  };
+  realizedProfits: ProductContribution[];
+  unrealizedProfits: ProductContribution[];
+  sortOptions: {
+    realized: { sort: string; order: string };
+    unrealized: { sort: string; order: string };
+  };
+}
+
 // API函数
 export const api = {
   // 获取投资组合
@@ -495,6 +562,110 @@ export const api = {
       return data.data;
     } catch (error) {
       console.error('获取游戏状态失败:', error);
+      throw error;
+    }
+  },
+
+  // 获取总资产
+  async getTotalAssets(userId: string): Promise<TotalAssetsData> {
+    try {
+      const response = await fetch(`${API_BASE}/assets/total?user_id=${userId}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || '获取总资产失败');
+      }
+      
+      return data.data;
+    } catch (error) {
+      console.error('获取总资产失败:', error);
+      throw error;
+    }
+  },
+
+  // 获取总资产历史
+  async getTotalAssetsHistory(userId: string): Promise<AssetsHistoryData> {
+    try {
+      const response = await fetch(`${API_BASE}/assets/history?user_id=${userId}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || '获取总资产历史失败');
+      }
+      
+      return data.data;
+    } catch (error) {
+      console.error('获取总资产历史失败:', error);
+      throw error;
+    }
+  },
+
+  // 获取产品贡献分析
+  async getProductContributions(
+    userId: string, 
+    realizedSort: string = 'profit', 
+    realizedOrder: string = 'desc',
+    unrealizedSort: string = 'profit', 
+    unrealizedOrder: string = 'desc'
+  ): Promise<ProductContributionsData> {
+    try {
+      const params = new URLSearchParams({
+        user_id: userId,
+        realized_sort: realizedSort,
+        realized_order: realizedOrder,
+        unrealized_sort: unrealizedSort,
+        unrealized_order: unrealizedOrder
+      });
+
+      const response = await fetch(`${API_BASE}/assets/contributions?${params}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || '获取产品贡献分析失败');
+      }
+      
+      return data.data;
+    } catch (error) {
+      console.error('获取产品贡献分析失败:', error);
+      throw error;
+    }
+  },
+
+  // 清除用户分析数据
+  async clearUserAnalysisData(userId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await fetch(`${API_BASE}/assets/clear?user_id=${userId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || '清除分析数据失败');
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('清除分析数据失败:', error);
       throw error;
     }
   }

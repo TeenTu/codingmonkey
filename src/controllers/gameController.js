@@ -1,5 +1,6 @@
 const gameModel = require('../models/gameModel');
 const priceUpdateController = require('./priceUpdateController');
+const assetsAnalysisController = require('./assetsAnalysisController');
 // const result = await priceUpdateController._updatePrices();
 const gameController = {
     // Initialize game for a user
@@ -15,6 +16,13 @@ const gameController = {
             }
 
             const result = await gameModel.initializeUserGame(userId, initialBalance, gameRemainDays);
+            
+            // 初始化第一天的总资产记录
+            try {
+                await assetsAnalysisController._updateTotalAssets(userId);
+            } catch (analysisError) {
+                console.error('Assets analysis initialization error:', analysisError);
+            }
             
             res.json({
                 success: true,
@@ -45,6 +53,14 @@ const gameController = {
             }
             const updatePricesResult = await priceUpdateController._updatePrices();
             const result = await gameModel.advanceDay(userId);
+            
+            // 更新总资产记录
+            try {
+                await assetsAnalysisController._updateTotalAssets(userId);
+            } catch (analysisError) {
+                console.error('Assets analysis update error after advance day:', analysisError);
+                // 不影响推进天数操作的成功
+            }
             
             res.json({
                 success: true,
@@ -214,6 +230,15 @@ const gameController = {
             }
 
             const result = await gameModel.restartGame(userId);
+            
+            // 清除用户分析数据
+            try {
+                const runtimeStorage = require('../history/runtimeStorage');
+                runtimeStorage.clearUserData(userId);
+            } catch (analysisError) {
+                console.error('Clear analysis data error after restart game:', analysisError);
+                // 不影响重置游戏操作的成功
+            }
             
             res.json({
                 success: true,

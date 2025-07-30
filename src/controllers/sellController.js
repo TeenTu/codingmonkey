@@ -1,4 +1,5 @@
 const sellModel = require('../models/sellModel');
+const assetsAnalysisController = require('./assetsAnalysisController');
 
 const sellController = {
     // FIFO卖出产品（按买入顺序）
@@ -23,6 +24,30 @@ const sellController = {
             }
 
             const result = await sellModel.sellByProductIdAndUserIdFIFO(productId, amount, userId);
+            
+            // 记录已实现盈亏到运行时存储
+            try {
+                if (result.sold_holdings && result.sold_holdings.length > 0) {
+                    const productName = result.sold_holdings[0].product_name || 'Unknown Product';
+                    
+                    assetsAnalysisController._recordTradeProfit(
+                        userId,
+                        productId,
+                        productName,
+                        result.summary.total_profit,
+                        result.summary.total_profit_percentage,
+                        result.summary.current_price,
+                        result.summary.total_sold_amount,
+                        result.summary.total_buy_value
+                    );
+                }
+                
+                // 更新总资产记录
+                await assetsAnalysisController._updateTotalAssets(userId);
+            } catch (analysisError) {
+                console.error('Assets analysis update error:', analysisError);
+                // 不影响卖出操作的成功
+            }
             
             // 格式化收益信息
             const profitInfo = result.summary.total_profit >= 0 ? 

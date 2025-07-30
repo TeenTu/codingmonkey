@@ -9,9 +9,16 @@ const productController = require('../controllers/productController');
 const getPortfolioController = require('../controllers/getPortfolioController');
 const gameController = require('../controllers/gameController');
 const getProductController = require('../controllers/getProductController');
+const assetsAnalysisController = require('../controllers/assetsAnalysisController');
 
 // Performance route
 router.get('/performance/', performanceController.getPerformance);
+
+// Assets analysis routes
+router.get('/assets/total', assetsAnalysisController.getTotalAssets);
+router.get('/assets/history', assetsAnalysisController.getTotalAssetsHistory);
+router.get('/assets/contributions', assetsAnalysisController.getProductContributions);
+router.delete('/assets/clear', assetsAnalysisController.clearUserAnalysisData);
 
 // Price update routes
 router.post('/update-prices', priceUpdateController.updatePrices);

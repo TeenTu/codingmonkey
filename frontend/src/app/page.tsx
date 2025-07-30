@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Newspaper } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,11 +27,14 @@ import {
   AlertCircle,
   Loader2,
   GamepadIcon,
-  Search
+  Search,
+  BarChart3,
+  Newspaper
 } from "lucide-react";
 import { api, type PortfolioItem, type PerformanceData, type AllProductsData, type ProductItem, type GameStatus } from "@/lib/api";
 import ProductDetail from "@/components/ProductDetail";
 import TradingOperation from "@/components/TradingOperation";
+import TotalAssetsAnalysis from "@/components/TotalAssetsAnalysis";
 
 export default function Home() {
   // 财经资讯相关状态
@@ -659,14 +661,18 @@ export default function Home() {
               />
             ) : (
               <Tabs defaultValue="portfolio" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="portfolio" className="flex items-center gap-2">
               <Briefcase className="h-4 w-4" />
               投资组合
             </TabsTrigger>
             <TabsTrigger value="performance" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
-              投资表现
+              投资组合表现
+            </TabsTrigger>
+            <TabsTrigger value="assets" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              总资产分析
             </TabsTrigger>
             <TabsTrigger value="action" className="flex items-center gap-2">
               <ShoppingCart className="h-4 w-4" />
@@ -753,7 +759,7 @@ export default function Home() {
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-600">总投资价值</p>
+                        <p className="text-sm font-medium text-gray-600">投资组合价值</p>
                         <p className="text-2xl font-bold">¥{performance?.totalValue.toFixed(2) || '0.00'}</p>
                       </div>
                       <DollarSign className="h-8 w-8 text-blue-600" />
@@ -765,7 +771,7 @@ export default function Home() {
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-600">总投资成本</p>
+                        <p className="text-sm font-medium text-gray-600">投资组合成本</p>
                         <p className="text-2xl font-bold">¥{performance?.totalCost.toFixed(2) || '0.00'}</p>
                       </div>
                       <Briefcase className="h-8 w-8 text-gray-600" />
@@ -777,7 +783,7 @@ export default function Home() {
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-600">总盈亏</p>
+                        <p className="text-sm font-medium text-gray-600">当前组合盈亏</p>
                                                  <p className={`text-2xl font-bold ${(performance?.totalGainLoss ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                            {(performance?.totalGainLoss ?? 0) >= 0 ? '+' : ''}¥{performance?.totalGainLoss?.toFixed(2) || '0.00'}
                          </p>
@@ -795,7 +801,7 @@ export default function Home() {
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-600">总盈亏率</p>
+                        <p className="text-sm font-medium text-gray-600">组合盈亏率</p>
                                                  <p className={`text-2xl font-bold ${(performance?.totalGainLossPercentage ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                            {(performance?.totalGainLossPercentage ?? 0) >= 0 ? '+' : ''}{performance?.totalGainLossPercentage?.toFixed(2) || '0.00'}%
                          </p>
@@ -856,6 +862,11 @@ export default function Home() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* 总资产分析标签 */}
+          <TabsContent value="assets">
+            <TotalAssetsAnalysis userId={userId} />
           </TabsContent>
 
           {/* 交易操作标签 */}
