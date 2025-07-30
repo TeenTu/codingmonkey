@@ -33,6 +33,16 @@ import {
 import { api, type PortfolioItem, type PerformanceData, type AllProductsData, type ProductItem } from "@/lib/api";
 import ProductDetail from "@/components/ProductDetail";
 import TradingOperation from "@/components/TradingOperation";
+// 👉 新增 —— 用于绘制饼图
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+
 
 export default function Home() {
   // 用户ID
@@ -59,6 +69,9 @@ export default function Home() {
   // 产品详情页面状态
   const [showProductDetail, setShowProductDetail] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string>("");
+
+  // toggle button for the donut chat of asset allocation
+  const [showChart, setShowChart] = useState(false);
 
   // 检查是否需要显示模拟投资初始化弹窗
   useEffect(() => {
@@ -133,6 +146,38 @@ export default function Home() {
     }
   };
 
+  // ① 定义辅助类型（放一次即可）
+    interface ChartDatum {
+      name: string;
+      value: number;
+    }
+
+    // ② 先算 chartData —— 整段不要嵌别的东西
+    const chartData: ChartDatum[] = Object.values(
+      portfolio.reduce((acc: Record<string, ChartDatum>, item) => {
+        const type = item.product_type || "未分类";
+        const amount = item.buy_amount ?? item.quantity ?? 0;
+
+        if (!acc[type]) acc[type] = { name: type, value: 0 };
+        acc[type].value += item.buy_price * amount;
+        return acc;
+      }, {} as Record<string, ChartDatum>)
+    );
+
+    // ③ chartData 已经生成完毕，再用它算总花费
+    const totalSpending = chartData.reduce((sum, d) => sum + d.value, 0);
+
+  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
+
+  const renderPercentLabel = ({
+    name,
+    percent,
+  }: {
+    name: string;
+    percent: number;
+  }) => `${name}: ${(percent * 100).toFixed(1)}%`;
+
+  
   // 加载投资表现数据
   const loadPerformance = async () => {
     try {
@@ -480,58 +525,109 @@ export default function Home() {
                 <CardDescription>
                   查看您的所有投资产品和持仓情况
                 </CardDescription>
+                {/* Updated Toggle Buttons */}
+              <div className="mt-4 flex gap-2">
+                <Button
+                  onClick={() => setShowChart(false)}
+                  variant="outline"
+                  className={showChart ? "bg-white text-gray-700" : "bg-blue-500 text-white"}
+                >
+                  查看表格
+                </Button>
+                <Button
+                  onClick={() => setShowChart(true)}
+                  variant="outline"
+                  className={showChart ? "bg-blue-500 text-white" : "bg-white text-gray-700"}
+                >
+                  查看图表
+                </Button>
+              </div>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-2">产品名称</th>
-                        <th className="text-left p-2">买入价格</th>
-                        <th className="text-left p-2">当前价格</th>
-                        <th className="text-left p-2">持有数量</th>
-                        <th className="text-left p-2">投资成本</th>
-                        <th className="text-left p-2">当前价值</th>
-                        <th className="text-left p-2">盈亏</th>
-                        <th className="text-left p-2">盈亏率</th>
-                      </tr>
-                    </thead>
-                                         <tbody>
-                       {loading ? (
-                         <tr>
-                           <td colSpan={8} className="p-4 text-center">
-                             <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                             <p className="mt-2 text-gray-500">加载中...</p>
-                           </td>
-                         </tr>
-                       ) : portfolio.length > 0 ? (
-                         portfolio.map((item: PortfolioItem) => (
-                           <tr key={item.id} className="border-b hover:bg-gray-50">
-                             <td className="p-2 font-medium">{item.product_name}</td>
-                             <td className="p-2">¥{item.buy_price.toFixed(2)}</td>
-                             <td className="p-2">¥{item.current_price.toFixed(2)}</td>
-                             <td className="p-2">{item.quantity}</td>
-                             <td className="p-2">¥{item.cost.toFixed(2)}</td>
-                             <td className="p-2">¥{item.current_value.toFixed(2)}</td>
-                             <td className={`p-2 ${item.gain_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                               {item.gain_loss >= 0 ? '+' : ''}¥{item.gain_loss.toFixed(2)}
-                             </td>
-                             <td className={`p-2 ${item.gain_loss_percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                               {item.gain_loss_percentage >= 0 ? '+' : ''}{item.gain_loss_percentage.toFixed(2)}%
-                             </td>
-                           </tr>
-                         ))
-                       ) : (
-                         <tr>
-                           <td colSpan={8} className="p-4 text-center text-gray-500">
-                             暂无投资组合数据
-                           </td>
-                         </tr>
-                       )}
-                     </tbody>
-                  </table>
-                </div>
+                {showChart ? (
+                  /* ---------- 图表视图 ---------- */
+                    <div className="relative h-96 w-full flex items-center justify-center">
+                      {/* 饼图本身 */}
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={chartData}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={85}
+                            outerRadius={120}
+                            label={renderPercentLabel}
+                            labelLine
+                          >
+                            {chartData.map((entry, index) => (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={COLORS[index % COLORS.length]}
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(v: number) => `¥${v.toFixed(2)}`}
+                            separator=": "
+                          />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+
+                      {/* 中心文字层（不响应鼠标事件） */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <p className="text-2xl font-extrabold tracking-wide text-gray-700">
+                          SPENDING
+                        </p>
+                        <p className="text-lg font-semibold text-orange-600 mt-1">
+                          ¥{totalSpending.toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                ) : (
+                  /* ---------- 表格视图（原代码搬过来） ---------- */
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left p-2">产品名称</th>
+                          <th className="text-left p-2">买入价格</th>
+                          <th className="text-left p-2">当前价格</th>
+                          <th className="text-left p-2">持有数量</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {loading ? (
+                          <tr>
+                            <td colSpan={8} className="p-4 text-center">
+                              <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                              <p className="mt-2 text-gray-500">加载中...</p>
+                            </td>
+                          </tr>
+                        ) : portfolio.length > 0 ? (
+                          portfolio.map((item: PortfolioItem) => (
+                            <tr key={item.id} className="border-b hover:bg-gray-50">
+                              <td className="p-2 font-medium">{item.product_name}</td>
+                              <td className="p-2">¥{item.buy_price.toFixed(2)}</td>
+                              <td className="p-2">¥{item.current_price.toFixed(2)}</td>
+                              <td className="p-2">{item.quantity}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={8} className="p-4 text-center text-gray-500">
+                              暂无投资组合数据
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </CardContent>
+
             </Card>
           </TabsContent>
 

@@ -2,15 +2,16 @@
 const API_BASE = 'http://localhost:3000/api';
 
 export interface PortfolioItem {
-  id: number;
+  holding_id: number;
+  username: string;
+  product_id: number;
   product_name: string;
+  product_code: string;
+  product_type: string;
+  available_amount: number;
   buy_price: number;
+  buy_amount: number;
   current_price: number;
-  quantity: number;
-  cost: number;
-  current_value: number;
-  gain_loss: number;
-  gain_loss_percentage: number;
 }
 
 export interface PerformanceData {
@@ -130,9 +131,11 @@ export const api = {
       }) => ({
         id: item.holding_id,
         product_name: item.product_name,
+        product_type: item.product_type,          // 👈 新增
         buy_price: parseFloat(item.buy_price),
         current_price: parseFloat(item.current_price),
         quantity: parseInt(item.buy_amount),
+        buy_amount: parseInt(item.buy_amount),    // 👈 新增
         cost: parseFloat(item.total_buy_value),
         current_value: parseFloat(item.total_current_value),
         gain_loss: parseFloat(item.profit_loss),
