@@ -5,7 +5,7 @@ const gameController = {
     // Initialize game for a user
     initializeGame: async (req, res) => {
         try {
-            // const { userId, initialBalance = 500000.00, gameRemainDays = 30 } = req.body;
+            const { userId, initialBalance = 500000.00, gameRemainDays = 30 } = req.body;
             
             if (!userId) {
                 return res.status(400).json({ 
