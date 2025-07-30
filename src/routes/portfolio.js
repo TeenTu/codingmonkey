@@ -35,6 +35,9 @@ router.get('/product/detail/:productId', getProductController.getProductDetail);
 // Game initialization route
 router.post('/gameinit', gameController.initializeGame);
 
+// Get game status route
+router.get('/gamestatus', gameController.getGameStatus);
+
 // Advance day route
 router.get('/advanceday', gameController.advanceDay);
 

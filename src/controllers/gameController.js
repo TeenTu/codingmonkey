@@ -61,6 +61,42 @@ const gameController = {
         }
     },
 
+    // Get game status for a user
+    getGameStatus: async (req, res) => {
+        try {
+            // get userId from param, if not param use default user
+            const userId = req.query.user_id || 1;
+            
+            if (!userId) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'User ID is required' 
+                });
+            }
+
+            const gameStatus = await gameModel.getGameStatus(userId);
+            
+            if (!gameStatus) {
+                return res.status(404).json({ 
+                    success: false, 
+                    message: 'Game status not found for this user' 
+                });
+            }
+
+            res.json({
+                success: true,
+                data: gameStatus
+            });
+        } catch (error) {
+            console.error('Get game status error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to retrieve game status',
+                error: error.message
+            });
+        }
+    },
+
     getUserBalance: async (req, res) => {
         try {
             // get userId from param, if not param use default user
@@ -193,22 +229,6 @@ const gameController = {
             });
         }
     },
-
-    // Internal function for restarting game (for use by other modules)
-    _restartGame: async (userId) => {
-        try {
-            // Data validation
-            if (!userId || !Number.isInteger(Number(userId)) || Number(userId) <= 0) {
-                throw new Error('Invalid user ID: must be a positive integer');
-            }
-
-            const result = await gameModel.restartGame(userId);
-            
-            return result;
-        } catch (error) {
-            throw new Error(`Failed to restart game: ${error.message}`);
-        }
-    }
 };
 
 module.exports = gameController;
