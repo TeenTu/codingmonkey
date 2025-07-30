@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, ShoppingCart } from 'lucide-react';
+import { CheckCircle, ShoppingCart, Trophy, PartyPopper } from 'lucide-react';
 import { api, type BuyResult, type SellResult, type ProductItem } from '@/lib/api';
 
 interface TradingOperationProps {
@@ -14,6 +14,65 @@ interface TradingOperationProps {
   selectedProduct: ProductItem | null;
   onTradeComplete: () => void;
 }
+
+// 礼花效果函数
+const triggerConfetti = () => {
+  const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+  
+  // 创建礼花元素
+  for (let i = 0; i < 50; i++) {
+    setTimeout(() => {
+      const confetti = document.createElement('div');
+      confetti.style.position = 'fixed';
+      confetti.style.left = Math.random() * window.innerWidth + 'px';
+      confetti.style.top = '-10px';
+      confetti.style.width = '10px';
+      confetti.style.height = '10px';
+      confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      confetti.style.borderRadius = '50%';
+      confetti.style.pointerEvents = 'none';
+      confetti.style.zIndex = '9999';
+      confetti.style.animation = 'confetti-fall 3s linear forwards';
+      
+      document.body.appendChild(confetti);
+      
+      // 3秒后移除元素
+      setTimeout(() => {
+        if (confetti.parentNode) {
+          confetti.parentNode.removeChild(confetti);
+        }
+      }, 3000);
+    }, i * 50);
+  }
+};
+
+// 喝彩效果函数
+const triggerCelebration = () => {
+  const celebration = document.createElement('div');
+  celebration.style.position = 'fixed';
+  celebration.style.top = '50%';
+  celebration.style.left = '50%';
+  celebration.style.transform = 'translate(-50%, -50%)';
+  celebration.style.backgroundColor = 'rgba(255, 215, 0, 0.95)';
+  celebration.style.color = '#000';
+  celebration.style.padding = '20px 40px';
+  celebration.style.borderRadius = '15px';
+  celebration.style.fontSize = '24px';
+  celebration.style.fontWeight = 'bold';
+  celebration.style.zIndex = '10000';
+  celebration.style.boxShadow = '0 10px 30px rgba(0,0,0,0.3)';
+  celebration.style.animation = 'celebration-pop 2s ease-out forwards';
+  celebration.innerHTML = '🎉 恭喜盈利！🎉';
+  
+  document.body.appendChild(celebration);
+  
+  // 2秒后移除
+  setTimeout(() => {
+    if (celebration.parentNode) {
+      celebration.parentNode.removeChild(celebration);
+    }
+  }, 2000);
+};
 
 export default function TradingOperation({ userId, selectedProduct, onTradeComplete }: TradingOperationProps) {
   const [actionType, setActionType] = useState<'buy' | 'sell'>('buy');
@@ -26,6 +85,42 @@ export default function TradingOperation({ userId, selectedProduct, onTradeCompl
   const [isFromProductList, setIsFromProductList] = useState(false);
   const [manualProductId, setManualProductId] = useState(""); // 手动输入的产品ID
 
+  // 添加CSS动画样式
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes confetti-fall {
+        0% {
+          transform: translateY(-10px) rotate(0deg);
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(100vh) rotate(720deg);
+          opacity: 0;
+        }
+      }
+      
+      @keyframes celebration-pop {
+        0% {
+          transform: translate(-50%, -50%) scale(0);
+          opacity: 0;
+        }
+        50% {
+          transform: translate(-50%, -50%) scale(1.2);
+          opacity: 1;
+        }
+        100% {
+          transform: translate(-50%, -50%) scale(1);
+          opacity: 0;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   // 当选择的产品改变时，仅在从产品列表选择时设置
   React.useEffect(() => {
@@ -81,6 +176,15 @@ export default function TradingOperation({ userId, selectedProduct, onTradeCompl
       setSellResult(result);
       setBuyResult(null);
       setMessage({ type: 'success', text: '卖出操作成功' });
+      
+      // 检查是否盈利，如果盈利则触发庆祝效果
+      if (result.success && result.data && result.data.profit_summary && result.data.profit_summary.total_profit >= 0) {
+        // 延迟一点时间让用户看到结果，然后触发效果
+        setTimeout(() => {
+          triggerConfetti();
+          triggerCelebration();
+        }, 500);
+      }
       
       // 刷新数据
       setTimeout(() => {
@@ -294,22 +398,44 @@ export default function TradingOperation({ userId, selectedProduct, onTradeCompl
                   </Alert>
                   
                   {sellResult.success && sellResult.data && (
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>卖出数量:</span>
-                        <span className="font-medium">{sellResult.data.sold_amount}</span>
+                    <div className={`space-y-2 p-4 border rounded-lg ${
+                      Number(sellResult.data.profit_summary.total_profit) >= 0 
+                        ? 'bg-gradient-to-r from-green-50 to-yellow-50 border-green-200' 
+                        : 'bg-red-50 border-red-200'
+                    }`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        {Number(sellResult.data.profit_summary.total_profit) >= 0 ? (
+                          <>
+                            <Trophy className="h-5 w-5 text-yellow-600" />
+                            <span className="font-semibold text-green-800">🎉 盈利成功！</span>
+                          </>
+                        ) : (
+                          <span className="font-semibold text-red-800">卖出完成</span>
+                        )}
                       </div>
-                      <div className="flex justify-between">
-                        <span>总盈亏:</span>
-                        <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {Number(sellResult.data.profit_summary.total_profit) >= 0 ? '+' : ''}¥{Number(sellResult.data.profit_summary.total_profit).toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>盈亏率:</span>
-                        <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit_percentage) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {Number(sellResult.data.profit_summary.total_profit_percentage) >= 0 ? '+' : ''}{Number(sellResult.data.profit_summary.total_profit_percentage).toFixed(2)}%
-                        </span>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span>卖出数量:</span>
+                          <span className="font-medium">{sellResult.data.sold_amount}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>总盈亏:</span>
+                          <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {Number(sellResult.data.profit_summary.total_profit) >= 0 ? '+' : ''}¥{Number(sellResult.data.profit_summary.total_profit).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>盈亏率:</span>
+                          <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit_percentage) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {Number(sellResult.data.profit_summary.total_profit_percentage) >= 0 ? '+' : ''}{Number(sellResult.data.profit_summary.total_profit_percentage).toFixed(2)}%
+                          </span>
+                        </div>
+                        {Number(sellResult.data.profit_summary.total_profit) >= 0 && (
+                          <div className="flex items-center gap-1 mt-2 text-yellow-600">
+                            <PartyPopper className="h-4 w-4" />
+                            <span className="text-xs">恭喜盈利！</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
