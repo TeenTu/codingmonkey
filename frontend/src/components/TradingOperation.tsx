@@ -18,6 +18,7 @@ interface TradingOperationProps {
   onTradeComplete: () => void;
   allProducts?: { stocks: ProductItem[]; funds: ProductItem[] } | null;
   gameStatus?: GameStatus | null;
+  dataUpdateTimestamp?: number;
 }
 
 export default function TradingOperation({ 
@@ -25,7 +26,8 @@ export default function TradingOperation({
   selectedProduct, 
   onTradeComplete, 
   allProducts,
-  gameStatus 
+  gameStatus,
+  dataUpdateTimestamp
 }: TradingOperationProps) {
   const [actionType, setActionType] = useState<'buy' | 'sell'>('buy');
   const [productId, setProductId] = useState("");
@@ -48,7 +50,7 @@ export default function TradingOperation({
   const [lastSellAmount, setLastSellAmount] = useState<number>(0);
 
   // Load portfolio data for sell dropdown
-  const loadPortfolioData = async () => {
+  const loadPortfolioData = React.useCallback(async () => {
     setLoadingPortfolio(true);
     try {
       const data = await api.getPortfolioForDropdown(userId);
@@ -59,7 +61,7 @@ export default function TradingOperation({
     } finally {
       setLoadingPortfolio(false);
     }
-  };
+  }, [userId]);
 
   // Load portfolio data when switching to sell mode
   useEffect(() => {
@@ -88,6 +90,20 @@ export default function TradingOperation({
       setProductId(selectedProduct.id.toString());
     }
   }, [selectedProduct, actionType]);
+
+  // Reset form when data updates (e.g., after price update)
+  useEffect(() => {
+    if (dataUpdateTimestamp) {
+      setSelectedDropdownProduct(null);
+      setProductId("");
+      setAmount("");
+      setValidationErrors([]);
+      // 如果是卖出模式，也刷新持仓数据
+      if (actionType === 'sell') {
+        loadPortfolioData();
+      }
+    }
+  }, [dataUpdateTimestamp, actionType, loadPortfolioData]);
 
   // Handle dropdown selection
   const handleDropdownSelect = (value: string) => {
