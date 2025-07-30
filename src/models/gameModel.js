@@ -266,18 +266,20 @@ const gameModel = {
             );
             
             // 重置所有产品库存到初始状态
-            // 股票产品 (1-30) 重置为 1000
+            // 动态获取股票产品并重置为 1000
             await connection.execute(`
-                UPDATE product_quantity 
-                SET amount = 1000 
-                WHERE id BETWEEN 1 AND 30
+                UPDATE product_quantity pq
+                JOIN product_type pt ON pq.id = pt.id
+                SET pq.amount = 1000 
+                WHERE pt.type = 'Stock'
             `);
             
-            // 基金产品 (31-45) 重置为 2000
+            // 动态获取基金产品并重置为 2000
             await connection.execute(`
-                UPDATE product_quantity 
-                SET amount = 2000 
-                WHERE id BETWEEN 31 AND 45
+                UPDATE product_quantity pq
+                JOIN product_type pt ON pq.id = pt.id
+                SET pq.amount = 2000 
+                WHERE pt.type = 'Fund'
             `);
             
             await connection.commit();
