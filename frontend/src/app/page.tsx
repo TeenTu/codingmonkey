@@ -164,18 +164,25 @@ export default function Home() {
       }, {} as Record<string, ChartDatum>)
     );
 
-    // ③ chartData 已经生成完毕，再用它算总花费
+    // chartData 已经生成完毕，再用它算总花费
     const totalSpending = chartData.reduce((sum, d) => sum + d.value, 0);
+
+    // =========== Units Allocation ===========
+    const chartDataUnits: ChartDatum[] = Object.values(
+      portfolio.reduce((acc: Record<string, ChartDatum>, item) => {
+        const type = item.product_type || "未分类";
+        const amount = item.buy_amount ?? item.quantity ?? 0;
+
+        if (!acc[type]) acc[type] = { name: type, value: 0 };
+        acc[type].value += amount;  // 👈 只累加数量，不乘价格
+        return acc;
+      }, {} as Record<string, ChartDatum>)
+    );
 
   const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
-  const renderPercentLabel = ({
-    name,
-    percent,
-  }: {
-    name: string;
-    percent: number;
-  }) => `${name}: ${(percent * 100).toFixed(1)}%`;
+  const renderPercentLabel = ({ percent }: { percent: number }) =>
+  `${(percent * 100).toFixed(1)}%`;
 
   
   // 加载投资表现数据
@@ -545,49 +552,96 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 {showChart ? (
-                  /* ---------- 图表视图 ---------- */
-                    <div className="relative h-96 w-full flex items-center justify-center">
-                      {/* 饼图本身 */}
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={chartData}
-                            dataKey="value"
-                            nameKey="name"
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={85}
-                            outerRadius={120}
-                            label={renderPercentLabel}
-                            labelLine
-                          >
-                            {chartData.map((entry, index) => (
-                              <Cell
-                                key={`cell-${index}`}
-                                fill={COLORS[index % COLORS.length]}
-                              />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            formatter={(v: number) => `¥${v.toFixed(2)}`}
-                            separator=": "
-                          />
-                          <Legend />
-                        </PieChart>
-                      </ResponsiveContainer>
+                  <>
+                    {/* ---------- 图表视图（两张并列） ---------- */}
+                    <div className="flex flex-col lg:flex-row justify-center items-center gap-8 h-80 w-full">
+                      {/* ===== 数量占比（左） ===== */}
+                      <div className="relative h-full w-full max-w-xs">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={chartDataUnits}
+                              dataKey="value"
+                              nameKey="name"
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={65}
+                              outerRadius={100}
+                              label={renderPercentLabel}
+                              labelLine
+                            >
+                              {chartDataUnits.map((entry, index) => (
+                                <Cell
+                                  key={`cell-units-${index}`}
+                                  fill={COLORS[index % COLORS.length]}
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              formatter={(v) => `${(v as number).toLocaleString()}`}
+                              separator=": "
+                            />
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
 
-                      {/* 中心文字层（不响应鼠标事件） */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <p className="text-2xl font-extrabold tracking-wide text-gray-700">
-                          SPENDING
-                        </p>
-                        <p className="text-lg font-semibold text-orange-600 mt-1">
-                          ¥{totalSpending.toLocaleString()}
-                        </p>
+                        {/* 中心文字 */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                          <p className="text-xl font-extrabold tracking-wide text-gray-700">
+                            UNITS
+                          </p>
+                          <p className="text-base font-semibold text-orange-600 mt-1">
+                            {chartDataUnits
+                              .reduce((s, d) => s + d.value, 0)
+                              .toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* ===== 成本占比（右） ===== */}
+                      <div className="relative h-full w-full max-w-xs">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={chartData}
+                              dataKey="value"
+                              nameKey="name"
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={65}
+                              outerRadius={100}
+                              label={renderPercentLabel}
+                              labelLine
+                            >
+                              {chartData.map((entry, index) => (
+                                <Cell
+                                  key={`cell-cost-${index}`}
+                                  fill={COLORS[index % COLORS.length]}
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              formatter={(v) => `¥${(v as number).toFixed(2)}`}
+                              separator=": "
+                            />
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
+
+                        {/* 中心文字 */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                          <p className="text-xl font-extrabold tracking-wide text-gray-700">
+                            SPENDING
+                          </p>
+                          <p className="text-base font-semibold text-orange-600 mt-1">
+                            ¥{totalSpending.toLocaleString()}
+                          </p>
+                        </div>
                       </div>
                     </div>
+                  </>
                 ) : (
-                  /* ---------- 表格视图（原代码搬过来） ---------- */
+                  /* ---------- 表格视图---------- */
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
