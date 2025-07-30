@@ -96,7 +96,7 @@ const sellModel = {
                 UPDATE user_game_status 
                 SET balance = balance + ? 
                 WHERE user_id = ?
-            `, [totalProfit, userId]);
+            `, [totalSellValue, userId]);
 
             if (remainingSellAmount > 0) {
                 throw new Error(`可卖出数量不足，还需要 ${remainingSellAmount} 单位`);
