@@ -17,6 +17,7 @@ interface ProductDetailProps {
   userId: string;
   onBack: () => void;
   onTradeComplete?: () => void;
+  dataUpdateTimestamp?: number;
 }
 
 const formatCurrency = (value: any): string => {
@@ -24,7 +25,7 @@ const formatCurrency = (value: any): string => {
   return isNaN(num) ? '0.00' : num.toFixed(2);
 };
 
-export default function ProductDetail({ productId, userId, onBack, onTradeComplete }: ProductDetailProps) {
+export default function ProductDetail({ productId, userId, onBack, onTradeComplete, dataUpdateTimestamp }: ProductDetailProps) {
   const [productDetail, setProductDetail] = useState<ProductDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [buyAmount, setBuyAmount] = useState("");
@@ -38,7 +39,9 @@ export default function ProductDetail({ productId, userId, onBack, onTradeComple
   // 加载产品详情
   useEffect(() => {
     loadProductDetail();
-  }, [productId]);
+  }, [productId, dataUpdateTimestamp]);
+
+
 
   const loadProductDetail = async () => {
     try {

@@ -81,6 +81,12 @@ export default function Home() {
   const [performance, setPerformance] = useState<PerformanceData | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [dataUpdateTimestamp, setDataUpdateTimestamp] = useState<number>(Date.now());
+
+  // 统一的数据更新函数
+  const triggerDataUpdate = () => {
+    setDataUpdateTimestamp(Date.now());
+  };
 
   // 游戏状态
   const [gameStatus, setGameStatus] = useState<GameStatus | null>(null);
@@ -305,10 +311,10 @@ export default function Home() {
     try {
       const result = await api.advanceDay(userId);
       setMessage({ type: 'success', text: result.message });
-      // 刷新数据
-      setTimeout(() => {
-        loadAllData();
-      }, 1000);
+      // 立即刷新数据
+      await loadAllData();
+      // 触发统一的数据更新
+      triggerDataUpdate();
     } catch (error) {
       setMessage({ 
         type: 'error', 
@@ -718,6 +724,7 @@ export default function Home() {
                 userId={userId}
                 onBack={handleBackToProductList}
                 onTradeComplete={handleTradeComplete}
+                dataUpdateTimestamp={dataUpdateTimestamp}
               />
             ) : (
               <Tabs defaultValue="portfolio" className="space-y-6">
@@ -931,6 +938,7 @@ export default function Home() {
               onTradeComplete={handleTradeComplete}
               allProducts={allProducts}
               gameStatus={gameStatus}
+              dataUpdateTimestamp={dataUpdateTimestamp}
             />
           </TabsContent>
 
