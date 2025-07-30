@@ -812,6 +812,9 @@ export default function Home() {
               <Card>
                 <CardHeader>
                   <CardTitle>详细表现分析</CardTitle>
+                  <CardDescription className="text-xs text-gray-600 mt-1">
+                    💡 点击产品名称可进入详情页面进行买卖操作
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="overflow-x-auto">
