@@ -465,13 +465,6 @@ export default function Home() {
                 placeholder="用户ID"
                 className="w-20 h-8 text-sm"
               />
-              <Button size="sm" onClick={loadAllData} disabled={loading || productsLoading}>
-                {loading || productsLoading ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-3 w-3" />
-                )}
-              </Button>
               <Button 
                 size="sm" 
                 variant="destructive"
@@ -662,6 +655,7 @@ export default function Home() {
                 productId={selectedProductId}
                 userId={userId}
                 onBack={handleBackToProductList}
+                onTradeComplete={handleTradeComplete}
               />
             ) : (
               <Tabs defaultValue="portfolio" className="space-y-6">

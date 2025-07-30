@@ -14,6 +14,7 @@ interface ProductDetailProps {
   productId: string;
   userId: string;
   onBack: () => void;
+  onTradeComplete?: () => void;
 }
 
 const formatCurrency = (value: any): string => {
@@ -21,7 +22,7 @@ const formatCurrency = (value: any): string => {
   return isNaN(num) ? '0.00' : num.toFixed(2);
 };
 
-export default function ProductDetail({ productId, userId, onBack }: ProductDetailProps) {
+export default function ProductDetail({ productId, userId, onBack, onTradeComplete }: ProductDetailProps) {
   const [productDetail, setProductDetail] = useState<ProductDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [buyAmount, setBuyAmount] = useState("");
@@ -88,6 +89,10 @@ export default function ProductDetail({ productId, userId, onBack }: ProductDeta
         setBuyAmount("");
         // 重新加载产品详情以更新库存
         await loadProductDetail();
+        // 通知父组件刷新数据
+        if (onTradeComplete) {
+          onTradeComplete();
+        }
       } else {
         setMessage({ type: 'error', text: result.message });
       }
@@ -135,6 +140,10 @@ export default function ProductDetail({ productId, userId, onBack }: ProductDeta
         setSellAmount("");
         // 重新加载产品详情以更新库存
         await loadProductDetail();
+        // 通知父组件刷新数据
+        if (onTradeComplete) {
+          onTradeComplete();
+        }
       } else {
         setMessage({ type: 'error', text: result.message });
       }
