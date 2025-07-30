@@ -16,6 +16,11 @@ interface ProductDetailProps {
   onBack: () => void;
 }
 
+const formatCurrency = (value: any): string => {
+  const num = Number(value);
+  return isNaN(num) ? '0.00' : num.toFixed(2);
+};
+
 export default function ProductDetail({ productId, userId, onBack }: ProductDetailProps) {
   const [productDetail, setProductDetail] = useState<ProductDetailData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,6 +73,11 @@ export default function ProductDetail({ productId, userId, onBack }: ProductDeta
       setMessage(null);
 
       const result = await api.buyProduct(productId, userId, amount);
+      
+      // 添加调试日志
+      console.log('Buy result:', result);
+      console.log('Buy result data:', result.data);
+      
       setBuyResult(result);
       
       if (result.success) {
@@ -294,9 +304,9 @@ export default function ProductDetail({ productId, userId, onBack }: ProductDeta
               <h4 className="font-semibold text-green-800 mb-2">购买成功！</h4>
               <div className="text-sm text-green-700 space-y-1">
                 <p>持仓ID: {buyResult.data.holdingId}</p>
-                <p>购买价格: ¥{buyResult.data.buyPrice.toFixed(2)}</p>
+                <p>购买价格: ¥{formatCurrency(buyResult.data.buyPrice)}</p>
                 <p>当前持仓数量: {buyResult.data.currentHoldingAmount}</p>
-                <p>本次花费: ¥{buyResult.data.totalCost.toFixed(2)}</p>
+                <p>本次花费: ¥{formatCurrency(buyResult.data.totalCost)}</p>
                 <p>剩余可买数量: {buyResult.data.remainingQuantity}</p>
               </div>
             </div>

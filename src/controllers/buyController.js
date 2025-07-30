@@ -31,11 +31,11 @@ buyProduct: async (req, res) => {
         });
         }
 
-        const currentBalance = await buyModel.checkUserBalance(userId);
+        const currentBalance = Number(await buyModel.checkUserBalance(userId));
 
-        const productPrice = await buyModel.getProductPrice (productId);
+        const productPrice = Number(await buyModel.getProductPrice (productId));
 
-        const totalCost = (productPrice * amount).toFixed (2);
+        const totalCost = Number((productPrice * amount).toFixed (2));
         if (currentBalance < totalCost) {
             return res.status(400).json({
             success: false,

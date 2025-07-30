@@ -222,6 +222,7 @@ export const api = {
   // 买入产品
   async buyProduct(productId: string, userId: string, amount: number): Promise<BuyResult> {
     try {
+      console.log(`buyProduct called with productId: ${productId}, userId: ${userId}, amount: ${amount}`);
       const response = await fetch(`${API_BASE}/buy/product/${productId}/user/${userId}`, {
         method: 'POST',
         headers: {

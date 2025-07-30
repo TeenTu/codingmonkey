@@ -27,7 +27,10 @@ export default function TradingOperation({ userId, selectedProduct, onTradeCompl
   // 当选择的产品改变时，自动填充产品ID
   React.useEffect(() => {
     if (selectedProduct) {
-      setProductId(selectedProduct.id.toString());
+      setMessage({
+        type: 'success', 
+        text: `已选择产品: ${selectedProduct.name} (ID: ${selectedProduct.id})`
+      });      setProductId(selectedProduct.id.toString());
     }
   }, [selectedProduct]);
 
