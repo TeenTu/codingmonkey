@@ -7,6 +7,7 @@ const buyController = require('../controllers/buyController');
 const productController = require('../controllers/productController');
 const getPortfolioController = require('../controllers/getPortfolioController');
 const gameController = require('../controllers/gameController');
+const getProductController = require('../controllers/getProductController');
 
 // Performance route
 router.get('/performance/', performanceController.getPerformance);
@@ -21,6 +22,14 @@ router.post('/sell/product/:productId/user/:userId', sellController.sellProductF
 
 // Browse/Get portfolio
 router.get('/portfolio/user/:userId', getPortfolioController.getPortfolio);
+
+// Get all products route
+router.get('/products', getProductController.getAllProducts);
+router.get('/products/:type', getProductController.getProductsByType);
+router.get('/products/debug/daily-change', getProductController.debugDailyChange);
+
+// Get product detail by ID
+router.get('/product/detail/:productId', getProductController.getProductDetail);
 
 // Game initialization route
 router.post('/gameinit', gameController.initializeGame);
