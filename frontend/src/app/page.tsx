@@ -1,8 +1,8 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Newspaper } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +35,45 @@ import ProductDetail from "@/components/ProductDetail";
 import TradingOperation from "@/components/TradingOperation";
 
 export default function Home() {
+  // 财经资讯相关状态
+  const [news, setNews] = useState<any[]>([]);
+  const [newsLoading, setNewsLoading] = useState(false);
+  const [newsError, setNewsError] = useState<string | null>(null);
+
+  // 获取财经新闻 - 直接调用NewsAPI
+  const fetchNews = async () => {
+    setNewsLoading(true);
+    setNewsError(null);
+    try {
+      // 直接调用NewsAPI（绕过后端）
+      const newsApiUrl = 'https://newsapi.org/v2/everything?q=finance OR stock OR investment&language=en&sortBy=publishedAt&pageSize=20&apiKey=4d5f7d4b3dec476bbd66f2c0a58ba0a0';
+      
+      const res = await fetch(newsApiUrl);
+      const data = await res.json();
+      
+      if (data && data.articles) {
+        const formattedNews = data.articles.map((article: any) => ({
+          title: article.title || 'No Title',
+          link: article.url || '',
+          publisher: article.source?.name || 'Unknown',
+          providerPublishTime: article.publishedAt,
+          summary: article.description || '',
+          image: article.urlToImage || null,
+          author: article.author || null
+        }));
+        setNews(formattedNews);
+      } else {
+        setNews([]);
+        setNewsError('未获取到新闻');
+      }
+    } catch (e) {
+      console.error('NewsAPI调用失败:', e);
+      setNewsError('新闻获取失败');
+      setNews([]);
+    } finally {
+      setNewsLoading(false);
+    }
+  };
   // 用户ID
   const [userId, setUserId] = useState("1");
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
@@ -229,6 +268,7 @@ export default function Home() {
   // 初始加载
   useEffect(() => {
     loadAllData();
+    fetchNews(); // 自动加载新闻数据
   }, []);
 
   // 推进到下一天
@@ -370,16 +410,47 @@ export default function Home() {
           </div>
         )}
         {/* 头部 */}
-        <div className="flex justify-between items-start mb-8">
+        <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               投资管理系统
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 mb-3">
               管理您的投资组合，跟踪表现，执行交易
             </p>
           </div>
           
+          {/* 中间的滚动新闻条 */}
+          <div className="flex-1 max-w-xl mx-8">
+            <div className="bg-white border border-gray-300 rounded-md px-3 py-2 overflow-hidden shadow-sm">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 text-gray-700 flex-shrink-0">
+                  <Newspaper className="h-4 w-4" />
+                  <span className="text-xs font-medium">财经资讯</span>
+                </div>
+                <div className="w-px h-4 bg-gray-300"></div>
+                <div className="overflow-hidden flex-1">
+                  <div 
+                    className="whitespace-nowrap text-sm text-gray-800"
+                    style={{
+                      animation: 'scroll-news 45s linear infinite'
+                    }}
+                  >
+                    {news.length > 0 ? (
+                      news.slice(0, 5).map((item, idx) => (
+                        <span key={idx} className="mr-16">
+                          • {item.title}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-gray-500">正在获取最新财经资讯...</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* 用户状态显示 */}
           <div className="flex items-center gap-4">
             <div className="text-right">
@@ -607,6 +678,10 @@ export default function Home() {
               <ShoppingCart className="h-4 w-4" />
               交易操作
             </TabsTrigger>
+            <TabsTrigger value="news" className="flex items-center gap-2" onClick={fetchNews}>
+              <Newspaper className="h-4 w-4" />
+              财经资讯
+            </TabsTrigger>
           </TabsList>
 
           {/* 投资组合标签 */}
@@ -796,6 +871,95 @@ export default function Home() {
               selectedProduct={null} 
               onTradeComplete={handleTradeComplete} 
             />
+          </TabsContent>
+
+          {/* 财经资讯标签 */}
+          <TabsContent value="news">
+            <Card className="shadow-md border border-gray-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Newspaper className="h-5 w-5" />
+                  财经资讯
+                </CardTitle>
+                <CardDescription className="text-gray-500">最新国际财经新闻动态</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                {newsLoading ? (
+                  <div className="p-8 text-center">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-3" />
+                    <p className="text-gray-500">正在获取最新财经新闻...</p>
+                  </div>
+                ) : newsError ? (
+                  <div className="p-8 text-center">
+                    <p className="text-red-500 mb-3">{newsError}</p>
+                    <Button variant="outline" size="sm" onClick={fetchNews}>
+                      重新获取
+                    </Button>
+                  </div>
+                ) : news.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">
+                    <p>暂无新闻数据</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                    {news.slice(0, 12).map((item, idx) => (
+                      <div key={idx} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <div className="flex gap-4">
+                          {/* 新闻图片 */}
+                          {item.image && (
+                            <div className="flex-shrink-0">
+                              <img 
+                                src={item.image} 
+                                alt={item.title}
+                                className="w-20 h-20 object-cover rounded-md"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            </div>
+                          )}
+                          
+                          {/* 新闻内容 */}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-sm mb-2 line-clamp-2">
+                              <a 
+                                href={item.link} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-blue-700 hover:underline"
+                              >
+                                {item.title}
+                              </a>
+                            </h3>
+                            
+                            {item.summary && (
+                              <p className="text-xs text-gray-600 mb-2 line-clamp-2">
+                                {item.summary}
+                              </p>
+                            )}
+                            
+                            <div className="flex items-center justify-between text-xs text-gray-500">
+                              <div className="flex items-center gap-3">
+                                <span className="font-medium">{item.publisher}</span>
+                                {item.author && (
+                                  <span>by {item.author}</span>
+                                )}
+                              </div>
+                              <span>
+                                {item.providerPublishTime ? 
+                                  new Date(item.providerPublishTime).toLocaleDateString() : 
+                                  '未知时间'
+                                }
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
             )}
