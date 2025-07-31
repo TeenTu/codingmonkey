@@ -44,6 +44,7 @@ const performanceController = {
                     user_name: holding.user_name,
                     product_id: holding.product_id,
                     product_name: holding.name,
+                    product_type: holding.product_type || '未分类',
                     buy_price: holding.buy_price,
                     current_price: holding.current_price,
                     quantity: holding.buy_amount,

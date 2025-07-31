@@ -219,22 +219,23 @@ export default function Home() {
     const chartData: ChartDatum[] = Object.values(
       portfolio.reduce((acc: Record<string, ChartDatum>, item) => {
         const type = item.product_type || "未分类";
-        const amount = item.buy_amount;
+        const amount = item.buy_amount || 0;
+        const price = item.buy_price || 0;
 
         if (!acc[type]) acc[type] = { name: type, value: 0 };
-        acc[type].value += item.buy_price * amount;
+        acc[type].value += price * amount;
         return acc;
       }, {} as Record<string, ChartDatum>)
     );
 
     // chartData 已经生成完毕，再用它算总花费
-    const totalSpending = chartData.reduce((sum, d) => sum + d.value, 0);
+    const totalSpending = chartData.reduce((sum, d) => sum + (d.value || 0), 0);
 
     // =========== Units Allocation ===========
     const chartDataUnits: ChartDatum[] = Object.values(
       portfolio.reduce((acc: Record<string, ChartDatum>, item) => {
         const type = item.product_type || "未分类";
-        const amount = item.buy_amount;
+        const amount = item.buy_amount || 0;
 
         if (!acc[type]) acc[type] = { name: type, value: 0 };
         acc[type].value += amount;  // 👈 只累加数量，不乘价格
@@ -556,7 +557,7 @@ export default function Home() {
                   `🎊 猴哥说：点击${5 - monkeyClicks}次解锁惊喜！`
                 ) : performance ? (
                   performance.totalGainLoss > 0 ? (
-                    `猴哥笑哈哈！盈利¥${performance.totalGainLoss.toFixed(2)} 😄💰`
+                    `猴哥笑哈哈！盈利¥${(performance.totalGainLoss || 0).toFixed(2)} 😄💰`
                   ) : performance.totalGainLoss < 0 ? (
                     `猴哥有点难过，但相信你能翻盘！😢💪`
                   ) : (
@@ -613,7 +614,7 @@ export default function Home() {
               <div className="text-center">
                 <p className="text-sm text-gray-600">当前余额</p>
                 <p className="text-xl font-bold text-green-600">
-                  ¥{Number(gameStatus.balance).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  ¥{(Number(gameStatus.balance) || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               </div>
               <div className="text-center">
@@ -711,12 +712,12 @@ export default function Home() {
                                 <p className="text-xs text-gray-500">{stock.code}</p>
                               </div>
                               <div className="text-right ml-2">
-                                <p className="font-medium text-sm">¥{stock.current_price.toFixed(2)}</p>
+                                <p className="font-medium text-sm">¥{(stock.current_price || 0).toFixed(2)}</p>
                                 <p className={`text-xs ${
-                                  stock.daily_change > 0 ? 'text-green-600' : 
-                                  stock.daily_change < 0 ? 'text-red-600' : 'text-gray-500'
+                                  (stock.daily_change || 0) > 0 ? 'text-green-600' : 
+                                  (stock.daily_change || 0) < 0 ? 'text-red-600' : 'text-gray-500'
                                 }`}>
-                                  {stock.daily_change > 0 ? '+' : ''}{stock.daily_change_percentage.toFixed(2)}%
+                                  {(stock.daily_change || 0) > 0 ? '+' : ''}{(stock.daily_change_percentage || 0).toFixed(2)}%
                                 </p>
                               </div>
                             </div>
@@ -749,12 +750,12 @@ export default function Home() {
                                 <p className="text-xs text-gray-500">{fund.code}</p>
                               </div>
                               <div className="text-right ml-2">
-                                <p className="font-medium text-sm">¥{fund.current_price.toFixed(2)}</p>
+                                <p className="font-medium text-sm">¥{(fund.current_price || 0).toFixed(2)}</p>
                                 <p className={`text-xs ${
-                                  fund.daily_change > 0 ? 'text-green-600' : 
-                                  fund.daily_change < 0 ? 'text-red-600' : 'text-gray-500'
+                                  (fund.daily_change || 0) > 0 ? 'text-green-600' : 
+                                  (fund.daily_change || 0) < 0 ? 'text-red-600' : 'text-gray-500'
                                 }`}>
-                                  {fund.daily_change > 0 ? '+' : ''}{fund.daily_change_percentage.toFixed(2)}%
+                                  {(fund.daily_change || 0) > 0 ? '+' : ''}{(fund.daily_change_percentage || 0).toFixed(2)}%
                                 </p>
                               </div>
                             </div>
@@ -1022,10 +1023,10 @@ export default function Home() {
                             <tr key={item.id} className="border-b hover:bg-gray-50">
                               <td className="p-2 font-medium">{item.product_name}</td>
                               <td className="p-2 font-medium">{item.product_type}</td>
-                              <td className="p-2">¥{item.buy_price.toFixed(2)}</td>
-                              <td className="p-2">¥{item.current_price.toFixed(2)}</td>
-                              <td className="p-2">{item.buy_amount}</td>
-                              <td className="p-2">¥{item.cost.toFixed(2)}</td> 
+                              <td className="p-2">¥{(item.buy_price || 0).toFixed(2)}</td>
+                              <td className="p-2">¥{(item.current_price || 0).toFixed(2)}</td>
+                              <td className="p-2">{item.buy_amount || 0}</td>
+                              <td className="p-2">¥{(item.cost || 0).toFixed(2)}</td> 
                             </tr>
                           ))
                         ) : (
@@ -1054,7 +1055,7 @@ export default function Home() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-600">投资组合价值</p>
-                        <p className="text-2xl font-bold">¥{performance?.totalValue.toFixed(2) || '0.00'}</p>
+                        <p className="text-2xl font-bold">¥{(performance?.totalValue || 0).toFixed(2)}</p>
                       </div>
                       <DollarSign className="h-8 w-8 text-blue-600" />
                     </div>
@@ -1066,7 +1067,7 @@ export default function Home() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-600">投资组合成本</p>
-                        <p className="text-2xl font-bold">¥{performance?.totalCost.toFixed(2) || '0.00'}</p>
+                        <p className="text-2xl font-bold">¥{(performance?.totalCost || 0).toFixed(2)}</p>
                       </div>
                       <Briefcase className="h-8 w-8 text-gray-600" />
                     </div>
@@ -1079,7 +1080,7 @@ export default function Home() {
                       <div>
                         <p className="text-sm font-medium text-gray-600">当前组合盈亏</p>
                                                  <p className={`text-2xl font-bold ${(performance?.totalGainLoss ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                           {(performance?.totalGainLoss ?? 0) >= 0 ? '+' : ''}¥{performance?.totalGainLoss?.toFixed(2) || '0.00'}
+                           {(performance?.totalGainLoss ?? 0) >= 0 ? '+' : ''}¥{(performance?.totalGainLoss || 0).toFixed(2)}
                          </p>
                        </div>
                        {(performance?.totalGainLoss ?? 0) >= 0 ? (
@@ -1097,7 +1098,7 @@ export default function Home() {
                       <div>
                         <p className="text-sm font-medium text-gray-600">组合盈亏率</p>
                                                  <p className={`text-2xl font-bold ${(performance?.totalGainLossPercentage ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                           {(performance?.totalGainLossPercentage ?? 0) >= 0 ? '+' : ''}{performance?.totalGainLossPercentage?.toFixed(2) || '0.00'}%
+                           {(performance?.totalGainLossPercentage ?? 0) >= 0 ? '+' : ''}{(performance?.totalGainLossPercentage || 0).toFixed(2)}%
                          </p>
                       </div>
                       <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
@@ -1140,16 +1141,16 @@ export default function Home() {
                             >
                               {item.product_name}
                             </td>
-                            <td className="p-2">¥{item.buy_price.toFixed(2)}</td>
-                            <td className="p-2">¥{item.current_price.toFixed(2)}</td>
-                            <td className="p-2">{item.buy_amount}</td>
-                            <td className="p-2">¥{item.cost.toFixed(2)}</td>
-                            <td className="p-2">¥{item.current_value.toFixed(2)}</td>
-                            <td className={`p-2 ${item.gain_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {item.gain_loss >= 0 ? '+' : ''}¥{item.gain_loss.toFixed(2)}
+                            <td className="p-2">¥{(item.buy_price || 0).toFixed(2)}</td>
+                            <td className="p-2">¥{(item.current_price || 0).toFixed(2)}</td>
+                            <td className="p-2">{item.buy_amount || 0}</td>
+                            <td className="p-2">¥{(item.cost || 0).toFixed(2)}</td>
+                            <td className="p-2">¥{(item.current_value || 0).toFixed(2)}</td>
+                            <td className={`p-2 ${(item.gain_loss || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {(item.gain_loss || 0) >= 0 ? '+' : ''}¥{(item.gain_loss || 0).toFixed(2)}
                             </td>
-                            <td className={`p-2 ${item.gain_loss_percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {item.gain_loss_percentage >= 0 ? '+' : ''}{item.gain_loss_percentage.toFixed(2)}%
+                            <td className={`p-2 ${(item.gain_loss_percentage || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {(item.gain_loss_percentage || 0) >= 0 ? '+' : ''}{(item.gain_loss_percentage || 0).toFixed(2)}%
                             </td>
                           </tr>
                         ))}

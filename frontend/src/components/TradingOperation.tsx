@@ -208,7 +208,7 @@ export default function TradingOperation({
       // Refresh data
       setTimeout(() => {
         onTradeComplete();
-      }, 1000);
+      }, 500); // 减少延迟时间，让更新更快
     } catch (error) {
       setBuyResult({
         success: false,
@@ -247,11 +247,26 @@ export default function TradingOperation({
       setAmount("");
       setValidationErrors([]);
       
-      // Refresh data
-      setTimeout(() => {
-        onTradeComplete();
-        loadPortfolioData(); // Reload portfolio data for sell dropdown
-      }, 1000);
+      // Refresh data immediately
+      onTradeComplete();
+      
+      // Update portfolio data and selected product
+      setTimeout(async () => {
+        await loadPortfolioData(); // Reload portfolio data for sell dropdown
+        
+        // 更新当前选中产品的信息
+        if (selectedDropdownProduct && actionType === 'sell') {
+          const updatedPortfolioData = await api.getPortfolioForDropdown(userId);
+          const updatedProduct = updatedPortfolioData.find(p => p.product_id.toString() === productId);
+          if (updatedProduct) {
+            setSelectedDropdownProduct(updatedProduct);
+          } else {
+            // 如果产品已完全卖出，清空选择
+            setSelectedDropdownProduct(null);
+            setProductId("");
+          }
+        }
+      }, 300); // 更快的更新
     } catch (error) {
       setSellResult({
         success: false,
@@ -428,7 +443,7 @@ export default function TradingOperation({
                           <div className="flex flex-col space-y-1">
                             <span className="font-medium text-sm">{item.product_name} ({item.product_code})</span>
                             <span className="text-xs text-gray-500">
-                              {item.product_type} • 持有: {item.quantity} 份 • 现价: ¥{item.current_price.toFixed(2)}
+                              {item.product_type} • 持有: {item.quantity} 份 • 均价: ¥{item.buy_price.toFixed(2)} • 现价: ¥{item.current_price.toFixed(2)}
                             </span>
                           </div>
                         </SelectItem>

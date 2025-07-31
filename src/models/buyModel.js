@@ -102,26 +102,11 @@ const buyModel = {
                 throw new Error(errorMessage);   
             }
            
-            const existingHolding = await connection.query ( `
-                SELECT id, buy_amount FROM holdings WHERE product_id = ? AND user_id = ? FOR UPDATE
-                ` , [productId, userId]).then(([rows]) => rows[0] || null);
-
-            let result;
-            let holdingId;
-            if (existingHolding) {
-            // 2.1 已有持仓：更新数量（累加）
-            const newAmount = existingHolding.buy_amount + buyAmount;
-            await connection.query ( `
-                UPDATE holdings SET buy_amount = ? WHERE id = ? 
-                `, [newAmount, existingHolding.id]);
-            holdingId = existingHolding.id;
-            } else {
-            // 2.2 无持仓：新增记录
+            // 每次买入都创建新记录，不合并相同价格的持仓
             const [insertResult] = await connection.query ( `
                 INSERT INTO holdings (user_id, product_id, buy_price, buy_amount) VALUES (?, ?, ?, ?) 
                 `, [userId, productId, buyPrice, buyAmount]);
-            holdingId = insertResult.insertId;
-            }
+            const holdingId = insertResult.insertId;
                 
             
             // 3. 减少产品库存
@@ -145,7 +130,7 @@ const buyModel = {
             buyPrice,
             buyAmount,
             remainingQuantity: currentQuantity - buyAmount,
-            isNewHolding: !existingHolding // 标记是否为新增持仓
+            isNewHolding: true // 每次买入都是新记录
             };
             
 

@@ -59,9 +59,9 @@ const sellController = {
             
             res.json({
                 success: true,
-                message: `用户 ${username} 成功卖出 ${amount} 单位产品，${profitInfo}`,
+                message: `用户 ${username} 成功卖出 ${result.summary.total_sold_amount} 单位产品，${profitInfo}`,
                 data: {
-                    sold_amount: amount,
+                    sold_amount: result.summary.total_sold_amount,
                     sold_holdings: result.sold_holdings,
                     profit_summary: {
                         total_sold_amount: result.summary.total_sold_amount,

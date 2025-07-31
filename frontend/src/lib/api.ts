@@ -253,16 +253,43 @@ export const api = {
         throw new Error(data.message || '获取投资组合失败');
       }
       
-      // Convert to dropdown format
-      return data.data.map((item: any) => ({
-        id: item.holding_id,
-        product_id: item.product_id,
-        product_name: item.product_name,
-        product_code: item.product_code,
-        product_type: item.product_type,
-        quantity: parseInt(item.buy_amount),
-        buy_price: parseFloat(item.buy_price),
-        current_price: parseFloat(item.current_price)
+      // Convert to dropdown format - group by product
+      const productMap = new Map();
+      
+      data.data.forEach((item: any) => {
+        const productId = item.product_id;
+        if (!productMap.has(productId)) {
+          productMap.set(productId, {
+            id: productId, // Use product_id as unique key
+            product_id: productId,
+            product_name: item.product_name,
+            product_code: item.product_code,
+            product_type: item.product_type,
+            quantity: 0,
+            buy_price: 0, // Will be calculated as weighted average
+            current_price: parseFloat(item.current_price),
+            total_cost: 0
+          });
+        }
+        
+        const product = productMap.get(productId);
+        const itemQuantity = parseInt(item.buy_amount);
+        const itemCost = parseFloat(item.buy_price) * itemQuantity;
+        
+        product.quantity += itemQuantity;
+        product.total_cost += itemCost;
+      });
+      
+      // Calculate weighted average buy price for each product
+      return Array.from(productMap.values()).map(product => ({
+        id: product.id,
+        product_id: product.product_id,
+        product_name: product.product_name,
+        product_code: product.product_code,
+        product_type: product.product_type,
+        quantity: product.quantity,
+        buy_price: product.total_cost / product.quantity,
+        current_price: product.current_price
       }));
     } catch (error) {
       console.error('获取投资组合下拉数据失败:', error);
@@ -285,9 +312,10 @@ export const api = {
       const holdings = data.holdings.map((item: {
         id: number;
         product_name: string;
+        product_type?: string;
         buy_price: string;
         current_price: string;
-        buy_amount: string;
+        quantity: string; // 后端返回的是 quantity
         cost: string;
         current_value: string;
         gain_loss: string;
@@ -295,13 +323,14 @@ export const api = {
       }) => ({
         id: item.id,
         product_name: item.product_name,
-        buy_price: parseFloat(item.buy_price),
-        current_price: parseFloat(item.current_price),
-        buy_amount: parseInt(item.buy_amount),
-        cost: parseFloat(item.cost),
-        current_value: parseFloat(item.current_value),
-        gain_loss: parseFloat(item.gain_loss),
-        gain_loss_percentage: parseFloat(item.gain_loss_percentage)
+        product_type: item.product_type || '未分类',
+        buy_price: parseFloat(item.buy_price || '0'),
+        current_price: parseFloat(item.current_price || '0'),
+        buy_amount: parseInt(item.quantity || '0'), // 映射到 buy_amount
+        cost: parseFloat(item.cost || '0'),
+        current_value: parseFloat(item.current_value || '0'),
+        gain_loss: parseFloat(item.gain_loss || '0'),
+        gain_loss_percentage: parseFloat(item.gain_loss_percentage || '0')
       }));
       
       return {
