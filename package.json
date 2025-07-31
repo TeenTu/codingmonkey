@@ -12,6 +12,7 @@
   "dependencies": {
     "axios": "^1.11.0",
     "bcrypt": "^6.0.0",
+    "canvas-confetti": "^1.9.3",
     "cors": "^2.8.5",
     "csv-parse": "^6.1.0",
     "csv-writer": "^1.6.0",

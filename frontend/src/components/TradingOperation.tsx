@@ -616,8 +616,9 @@ export default function TradingOperation({
                       </div>
                     )}
                     {actionType === 'sell' && selectedDropdownProduct && (
-                      <p className="text-sm text-gray-600">
-                        预计盈亏: <span className={`font-semibold ${
+                      <div className="text-sm text-gray-600">
+                        <span>预计盈亏:</span>
+                         <span className={`font-semibold ${
                           (((selectedDropdownProduct as PortfolioDropdownItem)?.current_price || 0) - 
                            ((selectedDropdownProduct as PortfolioDropdownItem)?.buy_price || 0)) * Number(amount) >= 0 ? 
                           'text-green-600' : 'text-red-600'
