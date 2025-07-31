@@ -14,7 +14,7 @@ const performanceController = {
 
             const performance = await holdingperformance.getPerformance(userId);
 
-            if (!performance || performance.length === 0) {
+            if (!performance ) {
                 return res.status(404).json({ 
                     message: 'No holdings found',
                     totalValue: 0,
