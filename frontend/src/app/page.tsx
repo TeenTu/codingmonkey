@@ -731,6 +731,10 @@ export default function Home() {
             ) : (
               <Tabs defaultValue="portfolio" className="space-y-6">
           <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="assets" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              账户分析
+            </TabsTrigger>
             <TabsTrigger value="portfolio" className="flex items-center gap-2">
               <Briefcase className="h-4 w-4" />
               投资组合
@@ -739,10 +743,7 @@ export default function Home() {
               <TrendingUp className="h-4 w-4" />
               投资组合表现
             </TabsTrigger>
-            <TabsTrigger value="assets" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              总资产分析
-            </TabsTrigger>
+      
             <TabsTrigger value="action" className="flex items-center gap-2">
               <ShoppingCart className="h-4 w-4" />
               交易操作
@@ -938,7 +939,7 @@ export default function Home() {
 
           {/* 总资产分析标签 */}
           <TabsContent value="assets">
-            <TotalAssetsAnalysis userId={userId} />
+            <TotalAssetsAnalysis userId={userId} dataUpdateTimestamp={dataUpdateTimestamp} />
           </TabsContent>
 
           {/* 交易操作标签 */}
