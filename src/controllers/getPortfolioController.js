@@ -14,17 +14,17 @@ const getPortfolioController = {
             }
 
             const portfolio = await getModel.getPortfolioByUserId(userId);
-
-            if (portfolio.length === 0) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'No portfolio found for this user'
-                });
-            }
+            console.log(`Retrieved portfolio for user ${userId}:`, portfolio);
+            // if (portfolio.length === 0) {
+            //     return res.status(404).json({
+            //         success: false,
+            //         message: 'No portfolio found for this user'
+            //     });
+            // }
 
             res.json({
                 success: true,
-                message: `Successfully retrieved portfolio for user ${portfolio[0].username}`,
+                message: `Successfully retrieved portfolio for userId ${userId}`,
                 data: portfolio
             });
         } catch (error) {
