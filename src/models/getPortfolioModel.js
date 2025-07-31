@@ -23,7 +23,7 @@ const getPortfolioModel = {
             LEFT JOIN product_quantity pq ON p.id = pq.id
             WHERE u.id = ?
             ORDER BY h.id ASC
-        `, [userId]);
+        `, userId);
 
         return rows;
     }
