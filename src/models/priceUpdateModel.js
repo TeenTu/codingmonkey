@@ -97,7 +97,7 @@ const Price = {
 
     updateAllPrices: async (userId = 1) => {
         try {
-            // 从数据库获取游戏状态
+            // 从数据库获取游戏状态（仅读取，不更新）
             const gameStatus = await Price.getGameStatusFromDB(userId);
             const { MAX_DAYS, currentDay, remainDays, isGameOver } = gameStatus;
             
@@ -195,15 +195,15 @@ const Price = {
                 }
             }
 
-            // 更新用户游戏状态（剩余天数减1）
-            const updateResult = await Price.updateUserGameStatus(userId);
+            // 不更新用户游戏状态，只更新价格
+            // 注释掉：const updateResult = await Price.updateUserGameStatus(userId);
 
             return {
                 success: true,
                 message: `成功更新第 ${currentDay} 天（${targetDate}）的价格数据`,
                 currentDay: currentDay,
-                remainingDays: updateResult.remainDays,
-                isGameOver: updateResult.isGameOver,
+                remainingDays: remainDays, // 返回当前的剩余天数，不做修改
+                isGameOver: isGameOver,    // 返回当前的游戏状态，不做修改
                 date: targetDate
             };
         } catch (error) {

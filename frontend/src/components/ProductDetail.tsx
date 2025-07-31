@@ -2,19 +2,22 @@
 
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { api, type ProductDetailData, type BuyResult, type SellResult } from '@/lib/api';
+import { api, type ProductDetailData, type BuyResult, type SellResult, type PortfolioDropdownItem } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, TrendingUp, TrendingDown } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, Info } from 'lucide-react';
+// @ts-ignore
+import confetti from 'canvas-confetti';
 
 interface ProductDetailProps {
   productId: string;
   userId: string;
   onBack: () => void;
   onTradeComplete?: () => void;
+  dataUpdateTimestamp?: number;
 }
 
 const formatCurrency = (value: any): string => {
@@ -22,7 +25,7 @@ const formatCurrency = (value: any): string => {
   return isNaN(num) ? '0.00' : num.toFixed(2);
 };
 
-export default function ProductDetail({ productId, userId, onBack, onTradeComplete }: ProductDetailProps) {
+export default function ProductDetail({ productId, userId, onBack, onTradeComplete, dataUpdateTimestamp }: ProductDetailProps) {
   const [productDetail, setProductDetail] = useState<ProductDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [buyAmount, setBuyAmount] = useState("");
@@ -32,11 +35,20 @@ export default function ProductDetail({ productId, userId, onBack, onTradeComple
   const [sellLoading, setSellLoading] = useState(false);
   const [sellResult, setSellResult] = useState<SellResult | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [userHolding, setUserHolding] = useState<PortfolioDropdownItem | null>(null);
+  const [loadingHolding, setLoadingHolding] = useState(false);
 
   // 加载产品详情
   useEffect(() => {
     loadProductDetail();
-  }, [productId]);
+  }, [productId, dataUpdateTimestamp]);
+
+  // 加载用户持仓信息
+  useEffect(() => {
+    loadUserHolding();
+  }, [productId, userId, dataUpdateTimestamp]);
+
+
 
   const loadProductDetail = async () => {
     try {
@@ -48,6 +60,21 @@ export default function ProductDetail({ productId, userId, onBack, onTradeComple
       setMessage({ type: 'error', text: '加载产品详情失败' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadUserHolding = async () => {
+    try {
+      setLoadingHolding(true);
+      const portfolioData = await api.getPortfolioForDropdown(userId);
+      // 查找当前产品的持仓
+      const holding = portfolioData.find(item => item.product_id.toString() === productId);
+      setUserHolding(holding || null);
+    } catch (error) {
+      console.error('加载用户持仓失败:', error);
+      setUserHolding(null);
+    } finally {
+      setLoadingHolding(false);
     }
   };
 
@@ -89,6 +116,8 @@ export default function ProductDetail({ productId, userId, onBack, onTradeComple
         setBuyAmount("");
         // 重新加载产品详情以更新库存
         await loadProductDetail();
+        // 重新加载用户持仓信息
+        await loadUserHolding();
         // 通知父组件刷新数据
         if (onTradeComplete) {
           onTradeComplete();
@@ -138,8 +167,16 @@ export default function ProductDetail({ productId, userId, onBack, onTradeComple
       if (result.success) {
         setMessage({ type: 'success', text: result.message });
         setSellAmount("");
+        
+        // 检查是否有盈利，如果有则触发庆祝效果
+        if (result.data && result.data.profit_summary && result.data.profit_summary.total_profit >= 0) {
+          triggerCelebration();
+        }
+        
         // 重新加载产品详情以更新库存
         await loadProductDetail();
+        // 重新加载用户持仓信息
+        await loadUserHolding();
         // 通知父组件刷新数据
         if (onTradeComplete) {
           onTradeComplete();
@@ -153,6 +190,59 @@ export default function ProductDetail({ productId, userId, onBack, onTradeComple
     } finally {
       setSellLoading(false);
     }
+  };
+
+  // 触发庆祝效果
+  const triggerCelebration = () => {
+    // 主要礼花效果 - 从屏幕中央爆发
+    confetti({
+      particleCount: 150,
+      spread: 90,
+      origin: { y: 0.6 },
+      colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#ff69b4']
+    });
+
+    // 左侧礼花
+    setTimeout(() => {
+      confetti({
+        particleCount: 50,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0, y: 0.7 },
+        colors: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57']
+      });
+    }, 200);
+
+    // 右侧礼花
+    setTimeout(() => {
+      confetti({
+        particleCount: 50,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1, y: 0.7 },
+        colors: ['#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3', '#ff9f43']
+      });
+    }, 400);
+
+    // 顶部礼花
+    setTimeout(() => {
+      confetti({
+        particleCount: 30,
+        spread: 360,
+        origin: { x: 0.5, y: 0 },
+        colors: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57']
+      });
+    }, 600);
+
+    // 底部礼花
+    setTimeout(() => {
+      confetti({
+        particleCount: 40,
+        spread: 360,
+        origin: { x: 0.5, y: 1 },
+        colors: ['#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3', '#ff9f43']
+      });
+    }, 800);
   };
 
   if (loading) {
@@ -381,6 +471,38 @@ export default function ProductDetail({ productId, userId, onBack, onTradeComple
             <CardTitle className="text-red-600">卖出操作</CardTitle>
           </CardHeader>
           <CardContent>
+            {/* 持仓提示 */}
+            {loadingHolding ? (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-2 text-blue-700">
+                  <Info className="h-4 w-4" />
+                  <span className="text-sm">正在加载持仓信息...</span>
+                </div>
+              </div>
+            ) : userHolding ? (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center gap-2 text-green-700 mb-2">
+                  <Info className="h-4 w-4" />
+                  <span className="font-medium">您持有该产品</span>
+                </div>
+                <div className="text-sm text-green-600 space-y-1">
+                  <p>持有数量: <span className="font-semibold">{userHolding.quantity}</span> 份</p>
+                  <p>买入价格: <span className="font-semibold">¥{userHolding.buy_price.toFixed(2)}</span></p>
+                  <p>当前价格: <span className="font-semibold">¥{userHolding.current_price.toFixed(2)}</span></p>
+                  <p>盈亏: <span className={`font-semibold ${userHolding.current_price >= userHolding.buy_price ? 'text-green-600' : 'text-red-600'}`}>
+                    {userHolding.current_price >= userHolding.buy_price ? '+' : ''}¥{((userHolding.current_price - userHolding.buy_price) * userHolding.quantity).toFixed(2)}
+                  </span></p>
+                </div>
+              </div>
+            ) : (
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center gap-2 text-yellow-700">
+                  <Info className="h-4 w-4" />
+                  <span className="text-sm">您尚未持有该产品，无法卖出</span>
+                </div>
+              </div>
+            )}
+
             <form onSubmit={handleSell} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -389,10 +511,11 @@ export default function ProductDetail({ productId, userId, onBack, onTradeComple
                     id="sellAmount"
                     type="number"
                     min="1"
+                    max={userHolding?.quantity || undefined}
                     value={sellAmount}
                     onChange={(e) => setSellAmount(e.target.value)}
-                    placeholder="输入卖出数量"
-                    disabled={sellLoading}
+                    placeholder={userHolding ? `最多可卖出 ${userHolding.quantity} 份` : "您未持有该产品"}
+                    disabled={sellLoading || !userHolding}
                   />
                 </div>
                 <div className="space-y-2">
@@ -405,7 +528,7 @@ export default function ProductDetail({ productId, userId, onBack, onTradeComple
               
               <Button 
                 type="submit" 
-                disabled={sellLoading || !sellAmount || parseInt(sellAmount) <= 0}
+                disabled={sellLoading || !sellAmount || parseInt(sellAmount) <= 0 || !userHolding || parseInt(sellAmount) > (userHolding?.quantity || 0)}
                 className="w-full bg-red-600 hover:bg-red-700"
               >
                 {sellLoading ? '卖出中...' : '立即卖出'}
@@ -414,12 +537,44 @@ export default function ProductDetail({ productId, userId, onBack, onTradeComple
 
             {/* 卖出结果 */}
             {sellResult && sellResult.success && sellResult.data && (
-              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h4 className="font-semibold text-blue-800 mb-2">卖出成功！</h4>
-                <div className="text-sm text-blue-700 space-y-1">
-                  <p>卖出数量: {sellResult.data.sold_amount}</p>
-                  <p>总盈亏: ¥{formatCurrency(sellResult.data.profit_summary.total_profit)}</p>
-                  <p>盈亏率: {Number(sellResult.data.profit_summary.total_profit_percentage).toFixed(2)}%</p>
+              <div className={`mt-4 p-4 border rounded-lg ${
+                Number(sellResult.data.profit_summary.total_profit) >= 0 
+                  ? 'bg-gradient-to-r from-green-50 to-yellow-50 border-green-200' 
+                  : 'bg-red-50 border-red-200'
+              }`}>
+                <div className="flex items-center gap-2 mb-2">
+                  {Number(sellResult.data.profit_summary.total_profit) >= 0 ? (
+                    <>
+                      <span className="text-2xl">🎉</span>
+                      <span className="font-semibold text-green-800">盈利成功！</span>
+                    </>
+                  ) : (
+                    <span className="font-semibold text-red-800">卖出完成</span>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>卖出数量:</span>
+                    <span className="font-medium">{sellResult.data.sold_amount}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>总盈亏:</span>
+                    <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {Number(sellResult.data.profit_summary.total_profit) >= 0 ? '+' : ''}¥{Number(sellResult.data.profit_summary.total_profit).toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>盈亏率:</span>
+                    <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit_percentage) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {Number(sellResult.data.profit_summary.total_profit_percentage) >= 0 ? '+' : ''}{Number(sellResult.data.profit_summary.total_profit_percentage).toFixed(2)}%
+                    </span>
+                  </div>
+                  {Number(sellResult.data.profit_summary.total_profit) >= 0 && (
+                    <div className="flex items-center gap-1 mt-2 text-yellow-600">
+                      <span className="text-lg">🎊</span>
+                      <span className="text-xs">恭喜盈利！</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

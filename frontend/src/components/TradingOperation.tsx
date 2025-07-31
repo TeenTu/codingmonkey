@@ -9,6 +9,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CheckCircle, ShoppingCart, AlertTriangle, Loader2 } from 'lucide-react';
 import { api, type BuyResult, type SellResult, type ProductItem, type PortfolioDropdownItem, type GameStatus } from '@/lib/api';
+// @ts-ignore
+import confetti from 'canvas-confetti';
 
 interface TradingOperationProps {
   userId: string;
@@ -16,6 +18,7 @@ interface TradingOperationProps {
   onTradeComplete: () => void;
   allProducts?: { stocks: ProductItem[]; funds: ProductItem[] } | null;
   gameStatus?: GameStatus | null;
+  dataUpdateTimestamp?: number;
 }
 
 export default function TradingOperation({ 
@@ -23,7 +26,8 @@ export default function TradingOperation({
   selectedProduct, 
   onTradeComplete, 
   allProducts,
-  gameStatus 
+  gameStatus,
+  dataUpdateTimestamp
 }: TradingOperationProps) {
   const [actionType, setActionType] = useState<'buy' | 'sell'>('buy');
   const [productId, setProductId] = useState("");
@@ -40,9 +44,13 @@ export default function TradingOperation({
   
   // Validation states
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  
+  // 保存交易数量用于结果显示
+  const [lastBuyAmount, setLastBuyAmount] = useState<number>(0);
+  const [lastSellAmount, setLastSellAmount] = useState<number>(0);
 
   // Load portfolio data for sell dropdown
-  const loadPortfolioData = async () => {
+  const loadPortfolioData = React.useCallback(async () => {
     setLoadingPortfolio(true);
     try {
       const data = await api.getPortfolioForDropdown(userId);
@@ -53,7 +61,7 @@ export default function TradingOperation({
     } finally {
       setLoadingPortfolio(false);
     }
-  };
+  }, [userId]);
 
   // Load portfolio data when switching to sell mode
   useEffect(() => {
@@ -71,6 +79,8 @@ export default function TradingOperation({
     setBuyResult(null);
     setSellResult(null);
     setMessage(null);
+    setLastBuyAmount(0);
+    setLastSellAmount(0);
   }, [actionType]);
 
   // Handle external product selection (from product list)
@@ -80,6 +90,20 @@ export default function TradingOperation({
       setProductId(selectedProduct.id.toString());
     }
   }, [selectedProduct, actionType]);
+
+  // Reset form when data updates (e.g., after price update)
+  useEffect(() => {
+    if (dataUpdateTimestamp) {
+      setSelectedDropdownProduct(null);
+      setProductId("");
+      setAmount("");
+      setValidationErrors([]);
+      // 如果是卖出模式，也刷新持仓数据
+      if (actionType === 'sell') {
+        loadPortfolioData();
+      }
+    }
+  }, [dataUpdateTimestamp, actionType, loadPortfolioData]);
 
   // Handle dropdown selection
   const handleDropdownSelect = (value: string) => {
@@ -170,9 +194,11 @@ export default function TradingOperation({
     setIsLoading(true);
     
     try {
-      const result = await api.buyProduct(productId, userId, Number(amount));
+      const buyAmount = Number(amount); // 保存买入数量
+      const result = await api.buyProduct(productId, userId, buyAmount);
       setBuyResult(result);
       setSellResult(null);
+      setLastBuyAmount(buyAmount); // 保存买入数量用于显示
       setMessage({ type: 'success', text: '买入操作成功' });
       
       // Clear form
@@ -205,10 +231,17 @@ export default function TradingOperation({
     setIsLoading(true);
     
     try {
-      const result = await api.sellProduct(productId, userId, Number(amount));
+      const sellAmount = Number(amount); // 保存卖出数量
+      const result = await api.sellProduct(productId, userId, sellAmount);
       setSellResult(result);
       setBuyResult(null);
+      setLastSellAmount(sellAmount); // 保存卖出数量用于显示
       setMessage({ type: 'success', text: '卖出操作成功' });
+      
+      // 检查是否有盈利，如果有则触发庆祝效果
+      if (result.success && result.data && result.data.profit_summary && result.data.profit_summary.total_profit >= 0) {
+        triggerCelebration();
+      }
       
       // Clear form
       setAmount("");
@@ -228,6 +261,59 @@ export default function TradingOperation({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // 触发庆祝效果
+  const triggerCelebration = () => {
+    // 主要礼花效果 - 从屏幕中央爆发
+    confetti({
+      particleCount: 150,
+      spread: 90,
+      origin: { y: 0.6 },
+      colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#ff69b4']
+    });
+
+    // 左侧礼花
+    setTimeout(() => {
+      confetti({
+        particleCount: 50,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0, y: 0.7 },
+        colors: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57']
+      });
+    }, 200);
+
+    // 右侧礼花
+    setTimeout(() => {
+      confetti({
+        particleCount: 50,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1, y: 0.7 },
+        colors: ['#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3', '#ff9f43']
+      });
+    }, 400);
+
+    // 顶部礼花
+    setTimeout(() => {
+      confetti({
+        particleCount: 30,
+        spread: 360,
+        origin: { x: 0.5, y: 0 },
+        colors: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57']
+      });
+    }, 600);
+
+    // 底部礼花
+    setTimeout(() => {
+      confetti({
+        particleCount: 40,
+        spread: 360,
+        origin: { x: 0.5, y: 1 },
+        colors: ['#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3', '#ff9f43']
+      });
+    }, 800);
   };
 
   const handleAction = async (e: React.FormEvent) => {
@@ -368,19 +454,35 @@ export default function TradingOperation({
                         <span className="text-xs text-blue-600 block mb-1">产品名称</span>
                         <p className="font-semibold">
                           {actionType === 'buy' ? 
-                            (selectedDropdownProduct as ProductItem).name : 
-                            (selectedDropdownProduct as PortfolioDropdownItem).product_name
+                            (selectedDropdownProduct as ProductItem)?.name || '' : 
+                            (selectedDropdownProduct as PortfolioDropdownItem)?.product_name || ''
                           }
                         </p>
+                        <p>代码: {
+                          actionType === 'buy' ? 
+                            (selectedDropdownProduct as ProductItem)?.code || '' : 
+                            (selectedDropdownProduct as PortfolioDropdownItem)?.product_code || ''
+                        }</p>
+                        <p>类型: {
+                          actionType === 'buy' ? 
+                            (selectedDropdownProduct as ProductItem)?.product_type || '' : 
+                            (selectedDropdownProduct as PortfolioDropdownItem)?.product_type || ''
+                        }</p>
                       </div>
                       <div>
-                        <span className="text-xs text-blue-600 block mb-1">产品代码</span>
-                        <p className="font-medium">
-                          {actionType === 'buy' ? 
-                            (selectedDropdownProduct as ProductItem).code : 
-                            (selectedDropdownProduct as PortfolioDropdownItem).product_code
-                          }
-                        </p>
+                        <p>当前价格: ¥{
+                          actionType === 'buy' ? 
+                            (selectedDropdownProduct as ProductItem)?.current_price?.toFixed(2) || '0.00' : 
+                            (selectedDropdownProduct as PortfolioDropdownItem)?.current_price?.toFixed(2) || '0.00'
+                        }</p>
+                        <p>{actionType === 'buy' ? '可买数量' : '持有数量'}: {
+                          actionType === 'buy' ? 
+                            (selectedDropdownProduct as ProductItem)?.available_quantity || 0 : 
+                            (selectedDropdownProduct as PortfolioDropdownItem)?.quantity || 0
+                        }</p>
+                        {actionType === 'sell' && (
+                          <p>买入价: ¥{(selectedDropdownProduct as PortfolioDropdownItem)?.buy_price?.toFixed(2) || '0.00'}</p>
+                        )}
                       </div>
                       <div>
                         <span className="text-xs text-blue-600 block mb-1">产品类型</span>
@@ -471,8 +573,8 @@ export default function TradingOperation({
                   min="1"
                   max={selectedDropdownProduct ? 
                     (actionType === 'buy' ? 
-                      (selectedDropdownProduct as ProductItem).available_quantity || 0 : 
-                      (selectedDropdownProduct as PortfolioDropdownItem).quantity || 0
+                      (selectedDropdownProduct as ProductItem)?.available_quantity || 0 : 
+                      (selectedDropdownProduct as PortfolioDropdownItem)?.quantity || 0
                     ) : undefined
                   }
                   className="h-12 text-center text-lg font-semibold"
@@ -499,8 +601,8 @@ export default function TradingOperation({
                       </span>
                       <span className="text-lg font-bold text-gray-900">
                         ¥{(Number(amount) * (actionType === 'buy' ? 
-                          (selectedDropdownProduct as ProductItem).current_price || 0 : 
-                          (selectedDropdownProduct as PortfolioDropdownItem).current_price || 0
+                          (selectedDropdownProduct as ProductItem)?.current_price || 0 : 
+                          (selectedDropdownProduct as PortfolioDropdownItem)?.current_price || 0
                         )).toFixed(2)}
                       </span>
                     </div>
@@ -513,19 +615,15 @@ export default function TradingOperation({
                         </span>
                       </div>
                     )}
-                    
-                    {actionType === 'sell' && selectedDropdownProduct && (selectedDropdownProduct as PortfolioDropdownItem).buy_price && (
-                      <div className="flex justify-between items-center py-1">
-                        <span className="text-sm text-gray-600">预计盈亏</span>
-                        <span className={`font-bold ${
-                          (((selectedDropdownProduct as PortfolioDropdownItem).current_price || 0) - 
-                           ((selectedDropdownProduct as PortfolioDropdownItem).buy_price || 0)) * Number(amount) >= 0 ? 
+                    {actionType === 'sell' && selectedDropdownProduct && (
+                      <p className="text-sm text-gray-600">
+                        预计盈亏: <span className={`font-semibold ${
+                          (((selectedDropdownProduct as PortfolioDropdownItem)?.current_price || 0) - 
+                           ((selectedDropdownProduct as PortfolioDropdownItem)?.buy_price || 0)) * Number(amount) >= 0 ? 
                           'text-green-600' : 'text-red-600'
                         }`}>
-                          {(((selectedDropdownProduct as PortfolioDropdownItem).current_price || 0) - 
-                           ((selectedDropdownProduct as PortfolioDropdownItem).buy_price || 0)) * Number(amount) >= 0 ? '+' : ''}
-                          ¥{((((selectedDropdownProduct as PortfolioDropdownItem).current_price || 0) - 
-                             ((selectedDropdownProduct as PortfolioDropdownItem).buy_price || 0)) * Number(amount)).toFixed(2)}
+                          ¥{((((selectedDropdownProduct as PortfolioDropdownItem)?.current_price || 0) - 
+                             ((selectedDropdownProduct as PortfolioDropdownItem)?.buy_price || 0)) * Number(amount)).toFixed(2)}
                         </span>
                       </div>
                     )}
@@ -579,9 +677,7 @@ export default function TradingOperation({
                       </div>
                       <div className="flex justify-between">
                         <span>买入数量:</span>
-                        <span className="font-medium">
-                          {buyResult.data?.amount || amount}
-                        </span>
+                        <span className="font-medium">{lastBuyAmount}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>总花费:</span>
@@ -614,22 +710,44 @@ export default function TradingOperation({
                   </Alert>
                   
                   {sellResult.success && sellResult.data && (
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>卖出数量:</span>
-                        <span className="font-medium">{sellResult.data.sold_amount}</span>
+                    <div className={`space-y-2 p-4 border rounded-lg ${
+                      Number(sellResult.data.profit_summary.total_profit) >= 0 
+                        ? 'bg-gradient-to-r from-green-50 to-yellow-50 border-green-200' 
+                        : 'bg-red-50 border-red-200'
+                    }`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        {Number(sellResult.data.profit_summary.total_profit) >= 0 ? (
+                          <>
+                            <span className="text-2xl">🎉</span>
+                            <span className="font-semibold text-green-800">盈利成功！</span>
+                          </>
+                        ) : (
+                          <span className="font-semibold text-red-800">卖出完成</span>
+                        )}
                       </div>
-                      <div className="flex justify-between">
-                        <span>总盈亏:</span>
-                        <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {Number(sellResult.data.profit_summary.total_profit) >= 0 ? '+' : ''}¥{Number(sellResult.data.profit_summary.total_profit).toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>盈亏率:</span>
-                        <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit_percentage) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {Number(sellResult.data.profit_summary.total_profit_percentage) >= 0 ? '+' : ''}{Number(sellResult.data.profit_summary.total_profit_percentage).toFixed(2)}%
-                        </span>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span>卖出数量:</span>
+                          <span className="font-medium">{lastSellAmount}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>总盈亏:</span>
+                          <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {Number(sellResult.data.profit_summary.total_profit) >= 0 ? '+' : ''}¥{Number(sellResult.data.profit_summary.total_profit).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>盈亏率:</span>
+                          <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit_percentage) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {Number(sellResult.data.profit_summary.total_profit_percentage) >= 0 ? '+' : ''}{Number(sellResult.data.profit_summary.total_profit_percentage).toFixed(2)}%
+                          </span>
+                        </div>
+                        {Number(sellResult.data.profit_summary.total_profit) >= 0 && (
+                          <div className="flex items-center gap-1 mt-2 text-yellow-600">
+                            <span className="text-lg">🎊</span>
+                            <span className="text-xs">恭喜盈利！</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
