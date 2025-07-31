@@ -28,7 +28,10 @@ const sellController = {
             // 记录已实现盈亏到运行时存储
             try {
                 if (result.sold_holdings && result.sold_holdings.length > 0) {
-                    const productName = result.sold_holdings[0].product_name || 'Unknown Product';
+                    // 优先从 summary 获取产品名称，其次从 sold_holdings 获取
+                    const productName = result.summary.product_name || 
+                                      result.sold_holdings[0].product_name || 
+                                      'Unknown Product';
                     
                     assetsAnalysisController._recordTradeProfit(
                         userId,

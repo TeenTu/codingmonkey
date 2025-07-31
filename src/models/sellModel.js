@@ -17,18 +17,23 @@ const sellModel = {
 
             // 获取该用户该产品的所有持仓记录（按买入顺序排序）
             const [holdings] = await connection.query(`
-                SELECT * FROM holdings 
-                WHERE product_id = ? AND user_id = ?
-                ORDER BY id ASC
+                SELECT h.*, p.name as product_name 
+                FROM holdings h
+                LEFT JOIN product p ON h.product_id = p.id
+                WHERE h.product_id = ? AND h.user_id = ?
+                ORDER BY h.id ASC
             `, [productId, userId]);
 
             if (holdings.length === 0) {
                 throw new Error('没有找到该用户该产品的持仓记录');
             }
 
-            // 获取当前产品价格
+            // 获取当前产品价格和产品名称
             const [priceRows] = await connection.query(`
-                SELECT price FROM product_price WHERE id = ?
+                SELECT pp.price, p.name as product_name 
+                FROM product_price pp
+                LEFT JOIN product p ON pp.id = p.id
+                WHERE pp.id = ?
             `, [productId]);
 
             if (priceRows.length === 0) {
@@ -36,6 +41,7 @@ const sellModel = {
             }
 
             const currentPrice = priceRows[0].price;
+            const productName = priceRows[0].product_name; // 获取产品名称
             let remainingSellAmount = sellAmount;
             const soldHoldings = [];
             let totalProfit = 0; // 总收益
@@ -73,6 +79,7 @@ const sellModel = {
 
                 soldHoldings.push({
                     holding_id: holding.id,
+                    product_name: productName, // 添加产品名称
                     sold_amount: sellFromThisHolding,
                     buy_price: holding.buy_price,
                     current_price: currentPrice,
@@ -107,6 +114,7 @@ const sellModel = {
             return {
                 sold_holdings: soldHoldings,
                 summary: {
+                    product_name: productName, // 添加产品名称
                     total_sold_amount: sellAmount,
                     total_buy_value: totalBuyValue,
                     total_sell_value: totalSellValue,
