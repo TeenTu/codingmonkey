@@ -743,7 +743,6 @@ export default function Home() {
               <TrendingUp className="h-4 w-4" />
               投资组合表现
             </TabsTrigger>
-      
             <TabsTrigger value="action" className="flex items-center gap-2">
               <ShoppingCart className="h-4 w-4" />
               交易操作
