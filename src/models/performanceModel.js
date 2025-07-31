@@ -10,12 +10,14 @@ const Performance = {
                     h.user_id,
                     h.product_id,
                     p.name,
+                    pt.type as product_type,
                     h.buy_price,
                     h.buy_amount,
                     pp.price as current_price,
                     u.name as user_name
                 FROM holdings h
                 JOIN product p ON h.product_id = p.id
+                LEFT JOIN product_type pt ON p.id = pt.id
                 JOIN product_price pp ON p.id = pp.id
                 JOIN users u ON h.user_id = u.id
             `;

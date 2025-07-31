@@ -92,12 +92,16 @@ const sellModel = {
                 remainingSellAmount -= sellFromThisHolding;
             }
 
+            // 计算实际卖出的数量
+            const actualSoldAmount = sellAmount - remainingSellAmount;
+            
             // 将卖出的数量放回到product_quantity表中
             await connection.query(`
                 UPDATE product_quantity 
                 SET amount = amount + ? 
                 WHERE id = ?
-            `, [sellAmount, productId]);
+            `, [actualSoldAmount, productId]);
+            
             // 将收益添加到user_game_status表的余额中
             await connection.query(`
                 UPDATE user_game_status 
@@ -111,11 +115,12 @@ const sellModel = {
 
             await connection.commit();
             console.log('卖出操作成功');
+            
             return {
                 sold_holdings: soldHoldings,
                 summary: {
                     product_name: productName, // 添加产品名称
-                    total_sold_amount: sellAmount,
+                    total_sold_amount: actualSoldAmount,
                     total_buy_value: totalBuyValue,
                     total_sell_value: totalSellValue,
                     total_profit: totalProfit,

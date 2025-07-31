@@ -58,7 +58,7 @@ buyProduct: async (req, res) => {
         const productName = await buyModel.getProductName (productId);
         const userName = await buyModel.getUserName (userId);
         
-        const actionType = result.isNewHolding ? ' 新购入 ' : ' 加仓 ';
+        const actionType = ' 新购入 '; // 每次买入都是新记录
 
         // 更新总资产记录
         try {
@@ -79,7 +79,7 @@ buyProduct: async (req, res) => {
         userName,
         buyPrice: productPrice,
         amount: amount, // Add the purchased amount here
-        currentHoldingAmount: result.isNewHolding ? amount : await buyModel.getTotalHoldingAmount (productId, userId), // 新增时直接返回 amount，否则查总持仓
+        currentHoldingAmount: await buyModel.getTotalHoldingAmount (productId, userId), // 总是查询总持仓
         totalCost: parseFloat (totalCost),
         remainingQuantity: result.remainingQuantity
         }
