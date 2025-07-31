@@ -7,7 +7,7 @@ export interface PortfolioItem {
   product_type: string;
   buy_price: number;
   current_price: number;
-  quantity: number;
+  buy_amount: number;
   cost: number;
   current_value: number;
   gain_loss: number;
@@ -226,7 +226,7 @@ export const api = {
         product_type: item.product_type,
         buy_price: parseFloat(item.buy_price),
         current_price: parseFloat(item.current_price),
-        quantity: parseInt(item.buy_amount),
+        buy_amount: parseInt(item.buy_amount),
         cost: parseFloat(item.cost),
         current_value: parseFloat(item.total_current_value),
         gain_loss: parseFloat(item.profit_loss),

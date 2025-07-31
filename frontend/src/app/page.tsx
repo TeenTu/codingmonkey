@@ -234,7 +234,7 @@ export default function Home() {
     const chartDataUnits: ChartDatum[] = Object.values(
       portfolio.reduce((acc: Record<string, ChartDatum>, item) => {
         const type = item.product_type || "未分类";
-        const amount = item.buy_amount ?? item.quantity ?? 0;
+        const amount = item.buy_amount;
 
         if (!acc[type]) acc[type] = { name: type, value: 0 };
         acc[type].value += amount;  // 👈 只累加数量，不乘价格
@@ -1022,7 +1022,7 @@ export default function Home() {
                               <td className="p-2 font-medium">{item.product_type}</td>
                               <td className="p-2">¥{item.buy_price.toFixed(2)}</td>
                               <td className="p-2">¥{item.current_price.toFixed(2)}</td>
-                              <td className="p-2">{item.quantity}</td>
+                              <td className="p-2">{item.buy_amount}</td>
                               <td className="p-2">¥{item.cost.toFixed(2)}</td> 
                             </tr>
                           ))
@@ -1140,7 +1140,7 @@ export default function Home() {
                             </td>
                             <td className="p-2">¥{item.buy_price.toFixed(2)}</td>
                             <td className="p-2">¥{item.current_price.toFixed(2)}</td>
-                            <td className="p-2">{item.quantity}</td>
+                            <td className="p-2">{item.buy_quantity}</td>
                             <td className="p-2">¥{item.cost.toFixed(2)}</td>
                             <td className="p-2">¥{item.current_value.toFixed(2)}</td>
                             <td className={`p-2 ${item.gain_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
