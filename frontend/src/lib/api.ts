@@ -4,6 +4,7 @@ const API_BASE = 'http://localhost:3000/api';
 export interface PortfolioItem {
   id: number;
   product_name: string;
+  product_type: string;
   buy_price: number;
   current_price: number;
   quantity: number;
@@ -209,10 +210,11 @@ export const api = {
       return data.data.map((item: {
         holding_id: number;
         product_name: string;
+        product_type: string;
         buy_price: string;
         current_price: string;
         buy_amount: string;
-        total_buy_value: string;
+        cost: string;
         total_current_value: string;
         change: string;
         change_percentage: string;
@@ -221,10 +223,11 @@ export const api = {
       }) => ({
         id: item.holding_id,
         product_name: item.product_name,
+        product_type: item.product_type,
         buy_price: parseFloat(item.buy_price),
         current_price: parseFloat(item.current_price),
         quantity: parseInt(item.buy_amount),
-        cost: parseFloat(item.total_buy_value),
+        cost: parseFloat(item.cost),
         current_value: parseFloat(item.total_current_value),
         gain_loss: parseFloat(item.profit_loss),
         gain_loss_percentage: parseFloat(item.profit_loss_percentage)
