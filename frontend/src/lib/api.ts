@@ -4,9 +4,10 @@ const API_BASE = 'http://localhost:3000/api';
 export interface PortfolioItem {
   id: number;
   product_name: string;
+  product_type: string;
   buy_price: number;
   current_price: number;
-  quantity: number;
+  buy_amount: number;
   cost: number;
   current_value: number;
   gain_loss: number;
@@ -209,10 +210,11 @@ export const api = {
       return data.data.map((item: {
         holding_id: number;
         product_name: string;
+        product_type: string;
         buy_price: string;
         current_price: string;
         buy_amount: string;
-        total_buy_value: string;
+        cost: string;
         total_current_value: string;
         change: string;
         change_percentage: string;
@@ -221,10 +223,11 @@ export const api = {
       }) => ({
         id: item.holding_id,
         product_name: item.product_name,
+        product_type: item.product_type,
         buy_price: parseFloat(item.buy_price),
         current_price: parseFloat(item.current_price),
-        quantity: parseInt(item.buy_amount),
-        cost: parseFloat(item.total_buy_value),
+        buy_amount: parseInt(item.buy_amount),
+        cost: parseFloat(item.cost),
         current_value: parseFloat(item.total_current_value),
         gain_loss: parseFloat(item.profit_loss),
         gain_loss_percentage: parseFloat(item.profit_loss_percentage)
@@ -284,7 +287,7 @@ export const api = {
         product_name: string;
         buy_price: string;
         current_price: string;
-        quantity: string;
+        buy_amount: string;
         cost: string;
         current_value: string;
         gain_loss: string;
@@ -294,7 +297,7 @@ export const api = {
         product_name: item.product_name,
         buy_price: parseFloat(item.buy_price),
         current_price: parseFloat(item.current_price),
-        quantity: parseInt(item.quantity),
+        buy_amount: parseInt(item.buy_amount),
         cost: parseFloat(item.cost),
         current_value: parseFloat(item.current_value),
         gain_loss: parseFloat(item.gain_loss),

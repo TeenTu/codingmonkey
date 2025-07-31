@@ -36,6 +36,14 @@ import ProductDetail from "@/components/ProductDetail";
 import TradingOperation from "@/components/TradingOperation";
 import TotalAssetsAnalysis from "@/components/TotalAssetsAnalysis";
 import MonkeyAvatar from "@/components/MonkeyAvatar";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 export default function Home() {
   // 财经资讯相关状态
@@ -121,6 +129,12 @@ export default function Home() {
   const [monkeyClicks, setMonkeyClicks] = useState(0);
   const [showMonkeyMessage, setShowMonkeyMessage] = useState(false);
 
+  // Pie Charts 饼图
+  const [showChart, setShowChart] = useState(false);
+  // 控制中心文字是否显示
+  const [hoverUnits, setHoverUnits] = useState(false);
+  const [hoverCost, setHoverCost] = useState(false);
+
   // 检查是否需要显示模拟投资初始化弹窗
   useEffect(() => {
     const hasInitialized = localStorage.getItem(`game_initialized_user_${userId}`);
@@ -193,6 +207,46 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 定义辅助类型
+    interface ChartDatum {
+      name: string;
+      value: number;
+    }
+
+    // 先算 chartData
+    const chartData: ChartDatum[] = Object.values(
+      portfolio.reduce((acc: Record<string, ChartDatum>, item) => {
+        const type = item.product_type || "未分类";
+        const amount = item.buy_amount;
+
+        if (!acc[type]) acc[type] = { name: type, value: 0 };
+        acc[type].value += item.buy_price * amount;
+        return acc;
+      }, {} as Record<string, ChartDatum>)
+    );
+
+    // chartData 已经生成完毕，再用它算总花费
+    const totalSpending = chartData.reduce((sum, d) => sum + d.value, 0);
+
+    // =========== Units Allocation ===========
+    const chartDataUnits: ChartDatum[] = Object.values(
+      portfolio.reduce((acc: Record<string, ChartDatum>, item) => {
+        const type = item.product_type || "未分类";
+        const amount = item.buy_amount;
+
+        if (!acc[type]) acc[type] = { name: type, value: 0 };
+        acc[type].value += amount;  // 👈 只累加数量，不乘价格
+        return acc;
+      }, {} as Record<string, ChartDatum>)
+    );
+
+  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
+
+  const renderPercentLabel = ({ percent }: { percent?: number }) => {
+    if (percent === undefined) return '';
+    return `${(percent * 100).toFixed(1)}%`;
   };
 
   // 加载投资表现数据
@@ -753,7 +807,8 @@ export default function Home() {
             </TabsTrigger>
           </TabsList>
 
-          {/* 投资组合标签 */}
+
+          {/* 投资组合标签
           <TabsContent value="portfolio">
             <Card>
               <CardHeader>
@@ -775,9 +830,7 @@ export default function Home() {
                         <th className="text-left p-2">当前价格</th>
                         <th className="text-left p-2">持有数量</th>
                         <th className="text-left p-2">投资成本</th>
-                        <th className="text-left p-2">当前价值</th>
-                        <th className="text-left p-2">盈亏</th>
-                        <th className="text-left p-2">盈亏率</th>
+
                       </tr>
                     </thead>
                                          <tbody>
@@ -795,14 +848,7 @@ export default function Home() {
                              <td className="p-2">¥{item.buy_price.toFixed(2)}</td>
                              <td className="p-2">¥{item.current_price.toFixed(2)}</td>
                              <td className="p-2">{item.quantity}</td>
-                             <td className="p-2">¥{item.cost.toFixed(2)}</td>
-                             <td className="p-2">¥{item.current_value.toFixed(2)}</td>
-                             <td className={`p-2 ${item.gain_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                               {item.gain_loss >= 0 ? '+' : ''}¥{item.gain_loss.toFixed(2)}
-                             </td>
-                             <td className={`p-2 ${item.gain_loss_percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                               {item.gain_loss_percentage >= 0 ? '+' : ''}{item.gain_loss_percentage.toFixed(2)}%
-                             </td>
+                             <td className="p-2">¥{item.cost.toFixed(2)}</td> 
                            </tr>
                          ))
                        ) : (
@@ -816,6 +862,185 @@ export default function Home() {
                   </table>
                 </div>
               </CardContent>
+            </Card>
+          </TabsContent> */}
+          {/* 投资组合标签 */}
+          <TabsContent value="portfolio">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="h-5 w-5" />
+                  投资组合详情
+                </CardTitle>
+                <CardDescription>
+                  查看您的所有投资产品和持仓情况
+                </CardDescription>
+                {/* Updated Toggle Buttons */}
+              <div className="mt-4 flex gap-2">
+                <Button
+                  onClick={() => setShowChart(false)}
+                  variant="outline"
+                  className={showChart ? "bg-white text-gray-700" : "bg-blue-500 text-white"}
+                >
+                  查看表格
+                </Button>
+                <Button
+                  onClick={() => setShowChart(true)}
+                  variant="outline"
+                  className={showChart ? "bg-blue-500 text-white" : "bg-white text-gray-700"}
+                >
+                  查看图表
+                </Button>
+              </div>
+              </CardHeader>
+              <CardContent>
+                {showChart ? (
+                  <>
+                    {/* ---------- 图表视图（两张并列） ---------- */}
+                    <div className="flex flex-col lg:flex-row justify-center items-center gap-8 h-80 w-full">
+                      {/* ===== 数量占比（左） ===== */}
+                      <div className="relative h-full w-full max-w-xs">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={chartDataUnits}
+                              dataKey="value"
+                              nameKey="name"
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={65}
+                              outerRadius={100}
+                              label={renderPercentLabel}
+                              labelLine
+                              onMouseEnter={() => setHoverUnits(true)}
+                              onMouseLeave={() => setHoverUnits(false)}
+                            >
+                              {chartDataUnits.map((entry, index) => (
+                                <Cell
+                                  key={`cell-units-${index}`}
+                                  fill={COLORS[index % COLORS.length]}
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              formatter={(v) => `${(v as number).toLocaleString()}`}
+                              separator=": "
+                            />
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
+
+                        {/* 中心文字 —— 悬停时隐藏 */}
+                        <div
+                          className={`absolute inset-0 flex flex-col items-center justify-center pointer-events-none ${
+                            hoverUnits ? "hidden" : ""
+                          }`}
+                        >
+                          <p className="text-xl font-extrabold tracking-wide text-gray-700">
+                            UNITS
+                          </p>
+                          <p className="text-base font-semibold text-orange-600 mt-1">
+                            {chartDataUnits
+                              .reduce((s, d) => s + d.value, 0)
+                              .toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* ===== 成本占比（右） ===== */}
+                      <div className="relative h-full w-full max-w-xs">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={chartData}
+                              dataKey="value"
+                              nameKey="name"
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={65}
+                              outerRadius={100}
+                              label={renderPercentLabel}
+                              labelLine
+                              onMouseEnter={() => setHoverCost(true)}
+                              onMouseLeave={() => setHoverCost(false)}
+                            >
+                              {chartData.map((entry, index) => (
+                                <Cell
+                                  key={`cell-cost-${index}`}
+                                  fill={COLORS[index % COLORS.length]}
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              formatter={(v) => `¥${(v as number).toFixed(2)}`}
+                              separator=": "
+                            />
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
+
+                        {/* 中心文字 */}
+                        <div
+                          className={`absolute inset-0 flex flex-col items-center justify-center pointer-events-none ${
+                            hoverCost ? "hidden" : ""
+                          }`}
+                        >
+                          <p className="text-xl font-extrabold tracking-wide text-gray-700">
+                            SPENDING
+                          </p>
+                          <p className="text-base font-semibold text-orange-600 mt-1">
+                            ¥{totalSpending.toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  /* ---------- 表格视图---------- */
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left p-2">产品名称</th>
+                          <th className="text-left p-2">产品类型</th>
+                          <th className="text-left p-2">买入价格</th>
+                          <th className="text-left p-2">当前价格</th>
+                          <th className="text-left p-2">持有数量</th>
+                          <th className="text-left p-2">投资成本</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {loading ? (
+                          <tr>
+                            <td colSpan={8} className="p-4 text-center">
+                              <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                              <p className="mt-2 text-gray-500">加载中...</p>
+                            </td>
+                          </tr>
+                        ) : portfolio.length > 0 ? (
+                          portfolio.map((item: PortfolioItem) => (
+                            <tr key={item.id} className="border-b hover:bg-gray-50">
+                              <td className="p-2 font-medium">{item.product_name}</td>
+                              <td className="p-2 font-medium">{item.product_type}</td>
+                              <td className="p-2">¥{item.buy_price.toFixed(2)}</td>
+                              <td className="p-2">¥{item.current_price.toFixed(2)}</td>
+                              <td className="p-2">{item.buy_amount}</td>
+                              <td className="p-2">¥{item.cost.toFixed(2)}</td> 
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={8} className="p-4 text-center text-gray-500">
+                              暂无投资组合数据
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+
             </Card>
           </TabsContent>
 
@@ -917,7 +1142,7 @@ export default function Home() {
                             </td>
                             <td className="p-2">¥{item.buy_price.toFixed(2)}</td>
                             <td className="p-2">¥{item.current_price.toFixed(2)}</td>
-                            <td className="p-2">{item.quantity}</td>
+                            <td className="p-2">{item.buy_amount}</td>
                             <td className="p-2">¥{item.cost.toFixed(2)}</td>
                             <td className="p-2">¥{item.current_value.toFixed(2)}</td>
                             <td className={`p-2 ${item.gain_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
