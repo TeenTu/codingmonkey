@@ -12,6 +12,7 @@
   "dependencies": {
     "axios": "^1.11.0",
     "bcrypt": "^6.0.0",
+    "canvas-confetti": "^1.9.3",
     "cors": "^2.8.5",
     "csv-parse": "^6.1.0",
     "csv-writer": "^1.6.0",
@@ -24,6 +25,7 @@
     "postcss": "^8.5.6",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "recharts": "^3.1.0",
     "shadcn": "^2.9.3",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4.1.11",

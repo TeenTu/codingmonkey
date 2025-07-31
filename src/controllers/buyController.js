@@ -1,4 +1,6 @@
 const buyModel = require('../models/buyModel');
+const assetsAnalysisController = require('./assetsAnalysisController');
+
 const buyController = {
 buyProduct: async (req, res) => {
     try {
@@ -31,11 +33,11 @@ buyProduct: async (req, res) => {
         });
         }
 
-        const currentBalance = await buyModel.checkUserBalance(userId);
+        const currentBalance = Number(await buyModel.checkUserBalance(userId));
 
-        const productPrice = await buyModel.getProductPrice (productId);
+        const productPrice = Number(await buyModel.getProductPrice (productId));
 
-        const totalCost = (productPrice * amount).toFixed (2);
+        const totalCost = Number((productPrice * amount).toFixed (2));
         if (currentBalance < totalCost) {
             return res.status(400).json({
             success: false,
@@ -58,6 +60,14 @@ buyProduct: async (req, res) => {
         
         const actionType = result.isNewHolding ? ' 新购入 ' : ' 加仓 ';
 
+        // 更新总资产记录
+        try {
+            await assetsAnalysisController._updateTotalAssets(userId);
+        } catch (analysisError) {
+            console.error('Assets analysis update error:', analysisError);
+            // 不影响买入操作的成功
+        }
+
         res.status(200).json({
         success: true,
         message: `用户 ${userName} 成功${actionType} ${amount} 个单位的 ${productName}，本次花费: ${totalCost} 元`,
@@ -68,6 +78,7 @@ buyProduct: async (req, res) => {
         productName,
         userName,
         buyPrice: productPrice,
+        amount: amount, // Add the purchased amount here
         currentHoldingAmount: result.isNewHolding ? amount : await buyModel.getTotalHoldingAmount (productId, userId), // 新增时直接返回 amount，否则查总持仓
         totalCost: parseFloat (totalCost),
         remainingQuantity: result.remainingQuantity

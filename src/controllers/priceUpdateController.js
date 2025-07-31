@@ -3,7 +3,9 @@ const Price = require('../models/priceUpdateModel');
 const priceUpdateController = {
     updatePrices: async (req, res) => {
         try {
-            const result = await Price.updateAllPrices();
+            // 从查询参数获取userId，默认为1
+            const userId = req.query.user_id || 1;
+            const result = await Price.updateAllPrices(userId);
             if (!result.success) {
                 return res.status(400).json(result);
             }
@@ -17,10 +19,12 @@ const priceUpdateController = {
         }
     },
 
-    // gh
-    getStatus: (req, res) => {
+    // 获取状态改为异步
+    getStatus: async (req, res) => {
         try {
-            const status = Price.getUpdateStatus();
+            // 从查询参数获取userId，默认为1
+            const userId = req.query.user_id || 1;
+            const status = await Price.getUpdateStatus(userId);
             res.json({
                 success: true,
                 ...status
@@ -46,7 +50,27 @@ const priceUpdateController = {
                 error: error.message
             });
         }
+    },
+
+    // Internal function for updating prices (for use by other modules)
+    _updatePrices: async (userId = 1) => {
+        try {
+            const result = await Price.updateAllPrices(userId);
+            
+            if (!result.success) {
+                throw new Error(result.message || 'Failed to update prices');
+            }
+            
+            return result;
+        } catch (error) {
+            throw new Error(`Failed to update prices: ${error.message}`);
+        }
     }
 };
 
 module.exports = priceUpdateController;
+
+// 导出内部函数供其他模块使用Example usage:
+// const priceUpdateController = require('./priceUpdateController');
+// const result = await priceUpdateController._updatePrices();
+// 需要验证result字段success是否为true

@@ -1,9 +1,9 @@
 const mysql = require('mysql2/promise');
-// database pool config
+const password = require('./dbs_pwd'); // Import password from dbs_pwd.js
 const pool = mysql.createPool({
   host: 'localhost',
   user: 'root',      
-  password: 'n3u3da!',  
+  password: password,  
   database: 'investment_db',      
   waitForConnections: true,
   connectionLimit: 10,
