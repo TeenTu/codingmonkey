@@ -68,6 +68,7 @@ buyProduct: async (req, res) => {
         productName,
         userName,
         buyPrice: productPrice,
+        amount: amount, // Add the purchased amount here
         currentHoldingAmount: result.isNewHolding ? amount : await buyModel.getTotalHoldingAmount (productId, userId), // 新增时直接返回 amount，否则查总持仓
         totalCost: parseFloat (totalCost),
         remainingQuantity: result.remainingQuantity

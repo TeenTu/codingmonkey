@@ -84,6 +84,7 @@ export interface BuyResult {
     productName: string;
     userName: string;
     buyPrice: number;
+    amount: number; // Add this field
     currentHoldingAmount: number;
     totalCost: number;
     remainingQuantity: number;

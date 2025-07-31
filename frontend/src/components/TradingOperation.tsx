@@ -301,36 +301,36 @@ export default function TradingOperation({
               </Button>
             </div>
 
-            <form onSubmit={handleAction} className="space-y-4">
+            <form onSubmit={handleAction} className="space-y-6">
               {/* 产品选择下拉框 */}
-              <div>
-                <Label htmlFor="productSelect">选择产品</Label>
+              <div className="space-y-3">
+                <Label htmlFor="productSelect" className="text-base font-medium">选择产品</Label>
                 <Select 
                   value={selectedDropdownProduct ? 
                     (actionType === 'buy' ? 
-                      (selectedDropdownProduct as ProductItem).id.toString() : 
-                      (selectedDropdownProduct as PortfolioDropdownItem).product_id.toString()
+                      (selectedDropdownProduct as ProductItem).id?.toString() || "" : 
+                      (selectedDropdownProduct as PortfolioDropdownItem).product_id?.toString() || ""
                     ) : 
                     ""
                   } 
                   onValueChange={handleDropdownSelect}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-30 px-4 text-base [&_svg]:!h-10 [&_svg]:!w-6">
                     <SelectValue placeholder={
                       actionType === 'buy' ? 
                         "选择要买入的产品" : 
                         loadingPortfolio ? "加载中..." : "选择要卖出的产品"
                     } />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-80">
                     {actionType === 'buy' ? (
                       // Buy dropdown - show available products
                       getAvailableProducts().map((product) => (
-                        <SelectItem key={product.id} value={product.id.toString()}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{product.name} ({product.code})</span>
-                            <span className="text-sm text-gray-500">
-                              {product.product_type} - ¥{product.current_price.toFixed(2)} - 库存: {product.available_quantity}
+                        <SelectItem key={product.id} value={product.id.toString()} className="py-3">
+                          <div className="flex flex-col space-y-1">
+                            <span className="font-medium text-sm">{product.name} ({product.code})</span>
+                            <span className="text-xs text-gray-500">
+                              {product.product_type} • ¥{product.current_price.toFixed(2)} • 库存: {product.available_quantity}
                             </span>
                           </div>
                         </SelectItem>
@@ -338,11 +338,11 @@ export default function TradingOperation({
                     ) : (
                       // Sell dropdown - show portfolio holdings
                       portfolioData.map((item) => (
-                        <SelectItem key={item.product_id} value={item.product_id.toString()}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{item.product_name} ({item.product_code})</span>
-                            <span className="text-sm text-gray-500">
-                              {item.product_type} - 持有: {item.quantity} 份 - 现价: ¥{item.current_price.toFixed(2)}
+                        <SelectItem key={item.product_id} value={item.product_id.toString()} className="py-3">
+                          <div className="flex flex-col space-y-1">
+                            <span className="font-medium text-sm">{item.product_name} ({item.product_code})</span>
+                            <span className="text-xs text-gray-500">
+                              {item.product_type} • 持有: {item.quantity} 份 • 现价: ¥{item.current_price.toFixed(2)}
                             </span>
                           </div>
                         </SelectItem>
@@ -354,63 +354,112 @@ export default function TradingOperation({
 
               {/* 选中产品信息显示 */}
               {selectedDropdownProduct && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="text-sm text-blue-800">
-                    <div className="grid grid-cols-2 gap-2">
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold text-blue-800">已选择产品</h4>
+                    <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                      {actionType === 'buy' ? '买入模式' : '卖出模式'}
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 text-sm text-blue-800">
+                    <div className="space-y-2">
                       <div>
+                        <span className="text-xs text-blue-600 block mb-1">产品名称</span>
                         <p className="font-semibold">
                           {actionType === 'buy' ? 
                             (selectedDropdownProduct as ProductItem).name : 
                             (selectedDropdownProduct as PortfolioDropdownItem).product_name
                           }
                         </p>
-                        <p>代码: {
-                          actionType === 'buy' ? 
-                            (selectedDropdownProduct as ProductItem).code : 
-                            (selectedDropdownProduct as PortfolioDropdownItem).product_code
-                        }</p>
-                        <p>类型: {
-                          actionType === 'buy' ? 
-                            (selectedDropdownProduct as ProductItem).product_type : 
-                            (selectedDropdownProduct as PortfolioDropdownItem).product_type
-                        }</p>
                       </div>
                       <div>
-                        <p>当前价格: ¥{
-                          actionType === 'buy' ? 
-                            (selectedDropdownProduct as ProductItem).current_price.toFixed(2) : 
-                            (selectedDropdownProduct as PortfolioDropdownItem).current_price.toFixed(2)
-                        }</p>
-                        <p>{actionType === 'buy' ? '可买数量' : '持有数量'}: {
-                          actionType === 'buy' ? 
-                            (selectedDropdownProduct as ProductItem).available_quantity : 
-                            (selectedDropdownProduct as PortfolioDropdownItem).quantity
-                        }</p>
-                        {actionType === 'sell' && (
-                          <p>买入价: ¥{(selectedDropdownProduct as PortfolioDropdownItem).buy_price.toFixed(2)}</p>
-                        )}
+                        <span className="text-xs text-blue-600 block mb-1">产品代码</span>
+                        <p className="font-medium">
+                          {actionType === 'buy' ? 
+                            (selectedDropdownProduct as ProductItem).code : 
+                            (selectedDropdownProduct as PortfolioDropdownItem).product_code
+                          }
+                        </p>
                       </div>
+                      <div>
+                        <span className="text-xs text-blue-600 block mb-1">产品类型</span>
+                        <p className="font-medium">
+                          {actionType === 'buy' ? 
+                            (selectedDropdownProduct as ProductItem).product_type : 
+                            (selectedDropdownProduct as PortfolioDropdownItem).product_type
+                          }
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div>
+                        <span className="text-xs text-blue-600 block mb-1">当前价格</span>
+                        <p className="font-semibold text-lg">
+                          ¥{actionType === 'buy' ? 
+                            (selectedDropdownProduct as ProductItem).current_price?.toFixed(2) || '0.00' : 
+                            (selectedDropdownProduct as PortfolioDropdownItem).current_price?.toFixed(2) || '0.00'
+                          }
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-blue-600 block mb-1">
+                          {actionType === 'buy' ? '可买数量' : '持有数量'}
+                        </span>
+                        <p className="font-semibold text-green-700">
+                          {actionType === 'buy' ? 
+                            (selectedDropdownProduct as ProductItem).available_quantity || 0 : 
+                            (selectedDropdownProduct as PortfolioDropdownItem).quantity || 0
+                          } 份
+                        </p>
+                      </div>
+                      {actionType === 'sell' && (selectedDropdownProduct as PortfolioDropdownItem).buy_price && (
+                        <div>
+                          <span className="text-xs text-blue-600 block mb-1">买入价格</span>
+                          <p className="font-medium text-gray-700">
+                            ¥{(selectedDropdownProduct as PortfolioDropdownItem).buy_price.toFixed(2)}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* 产品ID（只读显示） */}
-              <div>
-                <Label htmlFor="productId">产品ID</Label>
-                <Input
-                  id="productId"
-                  type="text"
-                  value={productId}
-                  placeholder="请先选择产品"
-                  readOnly
-                  className="bg-gray-50"
-                />
+              {/* 产品代码（只读显示） */}
+              <div className="space-y-3">
+                <Label htmlFor="productCode" className="text-base font-medium text-gray-700">产品代码</Label>
+                <div className="relative">
+                  <Input
+                    id="productCode"
+                    type="text"
+                    value={selectedDropdownProduct ? 
+                      (actionType === 'buy' ? 
+                        (selectedDropdownProduct as ProductItem).code || '' : 
+                        (selectedDropdownProduct as PortfolioDropdownItem).product_code || ''
+                      ) : 
+                      ""
+                    }
+                    placeholder="请先选择产品"
+                    readOnly
+                    className="bg-gray-100 h-12 text-center font-mono text-lg font-semibold border-2 border-gray-200"
+                  />
+                  {selectedDropdownProduct && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-full">
+                        CODE
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* 数量输入 */}
-              <div>
-                <Label htmlFor="amount">数量</Label>
+              <div className="space-y-2">
+                <Label htmlFor="amount" className="text-base font-medium">
+                  {actionType === 'sell' ? '卖出数量' : '买入数量'}
+                </Label>
                 <Input
                   id="amount"
                   type="number"
@@ -422,42 +471,63 @@ export default function TradingOperation({
                   min="1"
                   max={selectedDropdownProduct ? 
                     (actionType === 'buy' ? 
-                      (selectedDropdownProduct as ProductItem).available_quantity : 
-                      (selectedDropdownProduct as PortfolioDropdownItem).quantity
+                      (selectedDropdownProduct as ProductItem).available_quantity || 0 : 
+                      (selectedDropdownProduct as PortfolioDropdownItem).quantity || 0
                     ) : undefined
                   }
+                  className="h-12 text-center text-lg font-semibold"
                 />
+                {selectedDropdownProduct && (
+                  <p className="text-xs text-gray-500 text-center">
+                    最多可{actionType === 'sell' ? '卖出' : '买入'}: {
+                      actionType === 'buy' ? 
+                        (selectedDropdownProduct as ProductItem).available_quantity || 0 : 
+                        (selectedDropdownProduct as PortfolioDropdownItem).quantity || 0
+                    } 份
+                  </p>
+                )}
               </div>
 
               {/* 预计金额显示 */}
               {selectedDropdownProduct && amount && Number(amount) > 0 && (
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <div className="space-y-1">
-                    <p className="text-sm text-gray-600">
-                      预计{actionType === 'sell' ? '收入' : '花费'}: 
-                      <span className="font-semibold ml-1">
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">交易预览</h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                      <span className="text-sm font-medium text-gray-600">
+                        预计{actionType === 'sell' ? '收入' : '花费'}
+                      </span>
+                      <span className="text-lg font-bold text-gray-900">
                         ¥{(Number(amount) * (actionType === 'buy' ? 
-                          (selectedDropdownProduct as ProductItem).current_price : 
-                          (selectedDropdownProduct as PortfolioDropdownItem).current_price
+                          (selectedDropdownProduct as ProductItem).current_price || 0 : 
+                          (selectedDropdownProduct as PortfolioDropdownItem).current_price || 0
                         )).toFixed(2)}
                       </span>
-                    </p>
+                    </div>
+                    
                     {actionType === 'buy' && gameStatus && (
-                      <p className="text-sm text-gray-600">
-                        当前余额: <span className="font-semibold">¥{Number(gameStatus.balance).toFixed(2)}</span>
-                      </p>
+                      <div className="flex justify-between items-center py-1">
+                        <span className="text-sm text-gray-600">当前余额</span>
+                        <span className="font-semibold text-green-600">
+                          ¥{Number(gameStatus.balance).toFixed(2)}
+                        </span>
+                      </div>
                     )}
-                    {actionType === 'sell' && selectedDropdownProduct && (
-                      <p className="text-sm text-gray-600">
-                        预计盈亏: <span className={`font-semibold ${
-                          ((selectedDropdownProduct as PortfolioDropdownItem).current_price - 
-                           (selectedDropdownProduct as PortfolioDropdownItem).buy_price) * Number(amount) >= 0 ? 
+                    
+                    {actionType === 'sell' && selectedDropdownProduct && (selectedDropdownProduct as PortfolioDropdownItem).buy_price && (
+                      <div className="flex justify-between items-center py-1">
+                        <span className="text-sm text-gray-600">预计盈亏</span>
+                        <span className={`font-bold ${
+                          (((selectedDropdownProduct as PortfolioDropdownItem).current_price || 0) - 
+                           ((selectedDropdownProduct as PortfolioDropdownItem).buy_price || 0)) * Number(amount) >= 0 ? 
                           'text-green-600' : 'text-red-600'
                         }`}>
-                          ¥{(((selectedDropdownProduct as PortfolioDropdownItem).current_price - 
-                             (selectedDropdownProduct as PortfolioDropdownItem).buy_price) * Number(amount)).toFixed(2)}
+                          {(((selectedDropdownProduct as PortfolioDropdownItem).current_price || 0) - 
+                           ((selectedDropdownProduct as PortfolioDropdownItem).buy_price || 0)) * Number(amount) >= 0 ? '+' : ''}
+                          ¥{((((selectedDropdownProduct as PortfolioDropdownItem).current_price || 0) - 
+                             ((selectedDropdownProduct as PortfolioDropdownItem).buy_price || 0)) * Number(amount)).toFixed(2)}
                         </span>
-                      </p>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -465,12 +535,12 @@ export default function TradingOperation({
 
               <Button 
                 type="submit" 
-                className="w-full" 
+                className="w-full h-12 text-base font-semibold" 
                 disabled={isLoading || !selectedDropdownProduct || !amount || validationErrors.length > 0}
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                     处理中...
                   </>
                 ) : (
@@ -509,7 +579,9 @@ export default function TradingOperation({
                       </div>
                       <div className="flex justify-between">
                         <span>买入数量:</span>
-                        <span className="font-medium">{amount}</span>
+                        <span className="font-medium">
+                          {buyResult.data?.amount || amount}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span>总花费:</span>
