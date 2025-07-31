@@ -46,6 +46,18 @@ export interface ProductItem {
   previous_price: number | null;
 }
 
+// Add new interface for portfolio items used in dropdown
+export interface PortfolioDropdownItem {
+  id: number;
+  product_id: number;
+  product_name: string;
+  product_code: string;
+  product_type: string;
+  quantity: number;
+  buy_price: number;
+  current_price: number;
+}
+
 export interface AllProductsData {
   stocks: ProductItem[];
   funds: ProductItem[];
@@ -218,6 +230,38 @@ export const api = {
       }));
     } catch (error) {
       console.error('获取投资组合失败:', error);
+      throw error;
+    }
+  },
+
+  // Add new method for portfolio dropdown data
+  async getPortfolioForDropdown(userId: string): Promise<PortfolioDropdownItem[]> {
+    try {
+      const response = await fetch(`${API_BASE}/portfolio/user/${userId}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || '获取投资组合失败');
+      }
+      
+      // Convert to dropdown format
+      return data.data.map((item: any) => ({
+        id: item.holding_id,
+        product_id: item.product_id,
+        product_name: item.product_name,
+        product_code: item.product_code,
+        product_type: item.product_type,
+        quantity: parseInt(item.buy_amount),
+        buy_price: parseFloat(item.buy_price),
+        current_price: parseFloat(item.current_price)
+      }));
+    } catch (error) {
+      console.error('获取投资组合下拉数据失败:', error);
       throw error;
     }
   },

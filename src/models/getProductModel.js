@@ -44,10 +44,10 @@ const getProductModel = {
             const product = products[0];
             
             // Calculate daily change
-            const dailyChange = calculateDailyChange(product.code, product.product_type);
+            const dailyChange = await calculateDailyChange(product.code, product.product_type);
             
             // Get historical price data for chart
-            const historicalPrices = getHistoricalPrices(product.code, product.product_type);
+            const historicalPrices = await getHistoricalPrices(product.code, product.product_type);
             
             return {
                 id: product.id,
@@ -95,8 +95,8 @@ const getProductModel = {
             // console.log('Database products:', products.map(p => ({ id: p.id, code: p.code, type: p.product_type })));
             
             // Calculate daily changes using priceCache
-            const productsWithChanges = products.map(product => {
-                const dailyChange = calculateDailyChange(product.code, product.product_type);
+            const productsWithChanges = await Promise.all(products.map(async (product) => {
+                const dailyChange = await calculateDailyChange(product.code, product.product_type);
                 
                 return {
                     id: product.id,
@@ -109,7 +109,7 @@ const getProductModel = {
                     daily_change_percentage: dailyChange.changePercentage,
                     previous_price: dailyChange.previousPrice
                 };
-            });
+            }));
             
             // Group by product type
             const groupedProducts = {
@@ -125,7 +125,7 @@ const getProductModel = {
 };
 
 // Helper function to calculate daily change
-function calculateDailyChange(productCode, productType) {
+async function calculateDailyChange(productCode, productType) {
     try {
         // Determine which price cache to use - 修正类型判断
         const cacheSource = productType === 'Stock' ? priceCache.stocks : priceCache.funds;
@@ -159,7 +159,7 @@ function calculateDailyChange(productCode, productType) {
         }
         
         // Get the last two prices (today and yesterday)
-        let currentDay = Price.getCurrentDay();
+        let currentDay = await Price.getCurrentDay();
         const prices = productPriceData.prices;
         if (currentDay === 0) {
             // 第0天：返回0涨跌幅，因为没有对比基准
@@ -206,7 +206,7 @@ function calculateDailyChange(productCode, productType) {
 }
 
 // Helper function to get historical prices for chart
-function getHistoricalPrices(productCode, productType) {
+async function getHistoricalPrices(productCode, productType) {
     try {
         // Determine which price cache to use
         const cacheSource = productType === 'Stock' ? priceCache.stocks : priceCache.funds;
@@ -222,7 +222,7 @@ function getHistoricalPrices(productCode, productType) {
         }
         
         // Get current day to limit the data
-        let currentDay = Price.getCurrentDay();
+        let currentDay = await Price.getCurrentDay();
         
         // Return price data up to current day (including today)
         const relevantPrices = productPriceData.prices.slice(0, currentDay);
