@@ -30,7 +30,7 @@ const getPortfolioController = {
 
             res.json({
                 success: true,
-                message: `Successfully retrieved portfolio for user ${portfolio[0].username}`,
+                message: `Successfully retrieved portfolio for userId ${userId}`,
                 data: portfolio
             });
         } catch (error) {
