@@ -239,7 +239,7 @@ export default function TradingOperation({
       setMessage({ type: 'success', text: '卖出操作成功' });
       
       // 检查是否有盈利，如果有则触发庆祝效果
-      if (result.success && result.data && result.data.profit_summary && result.data.profit_summary.total_profit >= 0) {
+      if (result.success && result.data && result.data.profit_summary && result.data.profit_summary.total_profit > 0) {
         triggerCelebration();
       }
       
@@ -748,17 +748,17 @@ export default function TradingOperation({
                         </div>
                         <div className="flex justify-between">
                           <span>总盈亏:</span>
-                          <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {Number(sellResult.data.profit_summary.total_profit) >= 0 ? '+' : ''}¥{Number(sellResult.data.profit_summary.total_profit).toFixed(2)}
+                          <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {Number(sellResult.data.profit_summary.total_profit) > 0 ? '+' : ''}¥{Number(sellResult.data.profit_summary.total_profit).toFixed(2)}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span>盈亏率:</span>
-                          <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit_percentage) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {Number(sellResult.data.profit_summary.total_profit_percentage) >= 0 ? '+' : ''}{Number(sellResult.data.profit_summary.total_profit_percentage).toFixed(2)}%
+                          <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit_percentage) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {Number(sellResult.data.profit_summary.total_profit_percentage) > 0 ? '+' : ''}{Number(sellResult.data.profit_summary.total_profit_percentage).toFixed(2)}%
                           </span>
                         </div>
-                        {Number(sellResult.data.profit_summary.total_profit) >= 0 && (
+                        {Number(sellResult.data.profit_summary.total_profit) > 0 && (
                           <div className="flex items-center gap-1 mt-2 text-yellow-600">
                             <span className="text-lg">🎊</span>
                             <span className="text-xs">恭喜盈利！</span>

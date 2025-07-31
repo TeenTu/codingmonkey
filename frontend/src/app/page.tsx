@@ -1207,7 +1207,7 @@ export default function Home() {
                     <p>暂无新闻数据</p>
                   </div>
                 ) : (
-                  <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                  <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
                     {news.slice(0, 12).map((item, idx) => (
                       <div key={idx} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
                         <div className="flex gap-4">
