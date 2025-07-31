@@ -169,7 +169,7 @@ export default function ProductDetail({ productId, userId, onBack, onTradeComple
         setSellAmount("");
         
         // 检查是否有盈利，如果有则触发庆祝效果
-        if (result.data && result.data.profit_summary && result.data.profit_summary.total_profit >= 0) {
+        if (result.data && result.data.profit_summary && result.data.profit_summary.total_profit > 0) {
           triggerCelebration();
         }
         
@@ -538,12 +538,12 @@ export default function ProductDetail({ productId, userId, onBack, onTradeComple
             {/* 卖出结果 */}
             {sellResult && sellResult.success && sellResult.data && (
               <div className={`mt-4 p-4 border rounded-lg ${
-                Number(sellResult.data.profit_summary.total_profit) >= 0 
+                Number(sellResult.data.profit_summary.total_profit) > 0 
                   ? 'bg-gradient-to-r from-green-50 to-yellow-50 border-green-200' 
                   : 'bg-red-50 border-red-200'
               }`}>
                 <div className="flex items-center gap-2 mb-2">
-                  {Number(sellResult.data.profit_summary.total_profit) >= 0 ? (
+                  {Number(sellResult.data.profit_summary.total_profit) > 0 ? (
                     <>
                       <span className="text-2xl">🎉</span>
                       <span className="font-semibold text-green-800">盈利成功！</span>
@@ -559,17 +559,17 @@ export default function ProductDetail({ productId, userId, onBack, onTradeComple
                   </div>
                   <div className="flex justify-between">
                     <span>总盈亏:</span>
-                    <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {Number(sellResult.data.profit_summary.total_profit) >= 0 ? '+' : ''}¥{Number(sellResult.data.profit_summary.total_profit).toFixed(2)}
+                    <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {Number(sellResult.data.profit_summary.total_profit) > 0 ? '+' : ''}¥{Number(sellResult.data.profit_summary.total_profit).toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span>盈亏率:</span>
                     <span className={`font-medium ${Number(sellResult.data.profit_summary.total_profit_percentage) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {Number(sellResult.data.profit_summary.total_profit_percentage) >= 0 ? '+' : ''}{Number(sellResult.data.profit_summary.total_profit_percentage).toFixed(2)}%
+                      {Number(sellResult.data.profit_summary.total_profit_percentage) > 0 ? '+' : ''}{Number(sellResult.data.profit_summary.total_profit_percentage).toFixed(2)}%
                     </span>
                   </div>
-                  {Number(sellResult.data.profit_summary.total_profit) >= 0 && (
+                  {Number(sellResult.data.profit_summary.total_profit) > 0 && (
                     <div className="flex items-center gap-1 mt-2 text-yellow-600">
                       <span className="text-lg">🎊</span>
                       <span className="text-xs">恭喜盈利！</span>
