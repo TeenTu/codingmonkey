@@ -244,8 +244,10 @@ export default function Home() {
 
   const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
-  const renderPercentLabel = ({ percent }: { percent: number }) =>
-  `${(percent * 100).toFixed(1)}%`;
+  const renderPercentLabel = ({ percent }: { percent?: number }) => {
+    if (percent === undefined) return '';
+    return `${(percent * 100).toFixed(1)}%`;
+  };
 
   // 加载投资表现数据
   const loadPerformance = async () => {
@@ -1140,7 +1142,7 @@ export default function Home() {
                             </td>
                             <td className="p-2">¥{item.buy_price.toFixed(2)}</td>
                             <td className="p-2">¥{item.current_price.toFixed(2)}</td>
-                            <td className="p-2">{item.buy_quantity}</td>
+                            <td className="p-2">{item.buy_amount}</td>
                             <td className="p-2">¥{item.cost.toFixed(2)}</td>
                             <td className="p-2">¥{item.current_value.toFixed(2)}</td>
                             <td className={`p-2 ${item.gain_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>

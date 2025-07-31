@@ -287,7 +287,7 @@ export const api = {
         product_name: string;
         buy_price: string;
         current_price: string;
-        quantity: string;
+        buy_amount: string;
         cost: string;
         current_value: string;
         gain_loss: string;
@@ -297,7 +297,7 @@ export const api = {
         product_name: item.product_name,
         buy_price: parseFloat(item.buy_price),
         current_price: parseFloat(item.current_price),
-        quantity: parseInt(item.quantity),
+        buy_amount: parseInt(item.buy_amount),
         cost: parseFloat(item.cost),
         current_value: parseFloat(item.current_value),
         gain_loss: parseFloat(item.gain_loss),
